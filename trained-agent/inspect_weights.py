@@ -26,14 +26,25 @@ difference = model_input_dimension - graph_dim
 print(f"Extra features added: {difference}")
 print("+5 comes from:\n +2 -> Tabular host feature (compromised, scanned)\n +3 -> Message features (2 message bits + is_received flag)")
 
-for i, label in enumerate(ObservationGraph.FEAT_MAP):
-    print(f"[{i}]{label}")
+# for i, label in enumerate(ObservationGraph.FEAT_MAP):
+#     print(f"[{i}]{label}")
 
-node_types = ObservationGraph.INV_NTYPES
-node_feature_dim = ObservationGraph.NTYPE_DIMS
-subnets = 9
-graph_additions = 5
+from wrapper.globals import ROUTERS 
 
-dimension = len(node_types) + sum(node_feature_dim) + subnets + graph_additions
+WRAPPER_LABELS = [
+    "tabular: was_compromised",
+    "tabular: was_scanned",
+    "message: bit_0",
+    "message: bit_1",
+    "message: is_received",
+]
 
-print(f"Dimension: {dimension}")
+all_labels = (
+    list(ObservationGraph.FEAT_MAP) +   # 0-177
+    ROUTERS +                            # 178-186  (subnet one-hot encoding)
+    WRAPPER_LABELS                       # 187-191  (graph_wrapper additions)
+)
+
+print(f"\nFull feature vector  (0 – {model_input_dimension - 1})\n")
+for i, label in enumerate(all_labels):
+    print(f"[{i}]  {label}")
