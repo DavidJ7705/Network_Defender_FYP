@@ -38,3 +38,19 @@ if state:
         if name not in CONTAINER_ROLES:
             unmapped.append(name)
     print(f"\nUnmapped (excluded): {unmapped}")
+
+
+print(f"\nSystem node encoding")
+test_cases = [
+    {"name": "web-server", "is_compromised": True},
+    {"name": "database",   "is_compromised": False},
+    {"name": "admin-ws",   "is_compromised": True},
+]
+for c in test_cases:
+    role, slot = CONTAINER_ROLES[c["name"]]
+    feature_vector = builder.encode_host(c, role)
+    non_zero = {idx: value for idx, value in enumerate(feature_vector) if value != 0.0}
+    status = "COMPROMISED" if c["is_compromised"] else "clean"
+    print(f"  {c['name']:20} [{status}]")
+    for pos, val in non_zero.items():
+        print(f"    [{pos}] = {val}")

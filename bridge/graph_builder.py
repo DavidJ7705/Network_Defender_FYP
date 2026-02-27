@@ -20,4 +20,21 @@ CONTAINER_ROLES ={
 class ObservationGraphBuilder:
     def build_graph(self, network_state):
         raise NotImplementedError
+
+    def encode_host(self, container, role):
+        features = [0.0] * FEATURE_DIM
+
+        features[14] = 1.0 #ubuntu
+        features[24] = 1.0 #linux
+
+        if role == "server":
+            features[56] = 1.0 #server
+        else:
+            features[55] = 1.0 #user
+
+        if container.get("is_compromised"):
+            features[187] = 1.0
+            features[188] = 1.0
+        
+        return features
     
