@@ -13,6 +13,8 @@ topology:
         - sysctl -w net.ipv4.ip_forward=1
         - ip addr add 10.0.0.1/30 dev eth1 # Link to Restricted Zone A Router
         - ip addr add 10.0.0.5/30 dev eth2 # Link to Restricted Zone B Router
+        - ip addr add 10.0.0.9/30 dev eth3 # Link to Contractor Network Router
+        - ip addr add 10.0.0.13/30 dev eth4 # Link to Public Access Zone Router
 
         #Return routes - Zone A
         - ip route add 10.0.1.0/24 via 10.0.0.2
@@ -21,6 +23,14 @@ topology:
         #Return routes - Zone B
         - ip route add 10.0.3.0/24 via 10.0.0.6
         - ip route add 10.0.4.0/24 via 10.0.0.6
+
+        #Return routes - Contractor Network
+        - ip route add 10.0.5.0/24 via 10.0.0.10
+        #Return routes - Public Access Zone
+        - ip route add 10.0.6.0/24 via 10.0.0.14
+        - ip route add 10.0.7.0/24 via 10.0.0.14
+        - ip route add 10.0.8.0/24 via 10.0.0.14
+
     # ************************************************************************
     # RESTRICTED ZONE A
     # ************************************************************************
@@ -141,6 +151,110 @@ topology:
         - ip addr add 10.0.4.6/30 dev eth1
         - ip route replace default via 10.0.4.5
 
+    # ************************************************************************
+    # CONTRACTOR NETWORK
+    # ************************************************************************
+    contractor-network-router:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - ip addr add 10.0.0.10/30 dev eth1
+        - ip addr add 10.0.5.1/30 dev eth2
+        - ip addr add 10.0.5.5/30 dev eth3
+        - ip addr add 10.0.5.9/30 dev eth4
+        - ip route replace default via 10.0.0.9
+
+    contractor-network-server-0:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip addr add 10.0.5.2/30 dev eth1
+        - ip route replace default via 10.0.5.1
+
+    contractor-network-user-0:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip addr add 10.0.5.6/30 dev eth1
+        - ip route replace default via 10.0.5.5
+    
+    contractor-network-user-1:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip addr add 10.0.5.10/30 dev eth1
+        - ip route replace default via 10.0.5.9
+
+
+    # ************************************************************************
+    # PUBLIC ACCESS ZONE
+    # ************************************************************************
+    public-access-zone-router:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - ip addr add 10.0.0.14/30 dev eth1
+        - ip addr add 10.0.6.1/30 dev eth2
+        - ip addr add 10.0.6.5/30 dev eth3
+        - ip addr add 10.0.6.9/30 dev eth4
+        - ip route replace default via 10.0.0.13
+        - ip route add 10.0.7.0/24 via 10.0.6.2
+        - ip route add 10.0.8.0/24 via 10.0.6.6
+      
+    public-access-zone-user-0:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip addr add 10.0.6.10/30 dev eth1
+        - ip route replace default via 10.0.6.9
+
+    # ************************************************************************
+    # ADMIN NETWORK
+    # ************************************************************************
+    admin-network-router:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - ip addr add 10.0.6.2/30 dev eth1
+        - ip addr add 10.0.7.1/30 dev eth2
+        - ip route replace default via 10.0.6.1
+
+    admin-network-user-0:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip addr add 10.0.7.2/30 dev eth1
+        - ip route replace default via 10.0.7.1
+
+    # ************************************************************************
+    # OFFICE NETWORK
+    # ************************************************************************
+    office-network-router:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - ip addr add 10.0.6.6/30 dev eth1
+        - ip addr add 10.0.8.1/30 dev eth2
+        - ip addr add 10.0.8.5/30 dev eth3
+        - ip route replace default via 10.0.6.5
+
+    office-network-user-0:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip addr add 10.0.8.2/30 dev eth1
+        - ip route replace default via 10.0.8.1
+
+    office-network-user-1:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip addr add 10.0.8.6/30 dev eth1
+        - ip route replace default via 10.0.8.5
 
   # ************************************************************************
   # LINKS
@@ -149,6 +263,8 @@ topology:
     # Internet Router upstream links
     - endpoints: ["internet-router:eth1", "restricted-zone-a-router:eth1"]
     - endpoints: ["internet-router:eth2", "restricted-zone-b-router:eth1"]
+    - endpoints: ["internet-router:eth3", "contractor-network-router:eth1"]
+    - endpoints: ["internet-router:eth4", "public-access-zone-router:eth1"]
     
     # Restricted Zone A links
     - endpoints: ["restricted-zone-a-router:eth2", "operational-zone-a-router:eth1"]
@@ -169,3 +285,20 @@ topology:
     # Operational Zone B links
     - endpoints: ["operational-zone-b-router:eth2", "operational-zone-b-server-0:eth1"]
     - endpoints: ["operational-zone-b-router:eth3", "operational-zone-b-user-0:eth1"]
+
+    # Contractor Network links
+    - endpoints: ["contractor-network-router:eth2", "contractor-network-server-0:eth1"]
+    - endpoints: ["contractor-network-router:eth3", "contractor-network-user-0:eth1"]
+    - endpoints: ["contractor-network-router:eth4", "contractor-network-user-1:eth1"]
+
+    # Public Access Zone links
+    - endpoints: ["public-access-zone-router:eth2", "admin-network-router:eth1"]
+    - endpoints: ["public-access-zone-router:eth3", "office-network-router:eth1"]
+    - endpoints: ["public-access-zone-router:eth4", "public-access-zone-user-0:eth1"]
+
+    # Admin Network links
+    - endpoints: ["admin-network-router:eth2", "admin-network-user-0:eth1"]
+
+    # Office Network links
+    - endpoints: ["office-network-router:eth2", "office-network-user-0:eth1"]
+    - endpoints: ["office-network-router:eth3", "office-network-user-1:eth1"]
