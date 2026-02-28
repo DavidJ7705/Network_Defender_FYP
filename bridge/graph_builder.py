@@ -67,22 +67,34 @@ class ObservationGraphBuilder:
 
         return servers, users, routers
 
-    def encode_host(self, container, role, subnet_idx):
-        features = [0.0] * FEATURE_DIM
+    def get_subnet_index (self, clean_name):
+        if "admin-network" in clean_name: return 0
+        elif "contractor-network" in clean_name: return 1
+        elif "internet" in clean_name: return 2
+        elif "office-network" in clean_name: return 3
+        elif "operational-zone-a" in clean_name: return 4
+        elif "operational-zone-b" in clean_name: return 5
+        elif "public-access-zone" in clean_name: return 6
+        elif "restricted-zone-a" in clean_name: return 7
+        elif "restricted-zone-b" in clean_name: return 8
+        return 0
 
-        features[14] = 1.0 #ubuntu
-        features[24] = 1.0 #linux
+    # def encode_host(self, container, role, subnet_idx):
+    #     features = [0.0] * FEATURE_DIM
 
-        if role == "server":
-            features[56] = 1.0 #server
-        else:
-            features[55] = 1.0 #user
+    #     features[14] = 1.0 #ubuntu
+    #     features[24] = 1.0 #linux
 
-        features[178 +subnet_idx] = 1.0
+    #     if role == "server":
+    #         features[56] = 1.0 #server
+    #     else:
+    #         features[55] = 1.0 #user
 
-        if container.get("is_compromised"):
-            features[187] = 1.0
-            features[188] = 1.0
+    #     features[178 +subnet_idx] = 1.0
+
+    #     if container.get("is_compromised"):
+    #         features[187] = 1.0
+    #         features[188] = 1.0
         
-        return features
+    #     return features
     
