@@ -10,11 +10,28 @@ NODE_TYPES = {
 NUM_ROUTERS = 9
 
 CONTAINER_ROLES ={
-    "admin-ws": ("user", 0, 0),
-    "web-server": ("server", 0, 4),
-    "database": ("server", 1, 5),
-    "public-web": ("server", 2, 6),
-    #maybe attacker one too
+    #servers
+    "restricted-zone-a-server-0": ("server", 0),
+    "restricted-zone-a-server-1": ("server", 1),
+    "operational-zone-a-server-0": ("server", 2),
+    "restricted-zone-b-server-0": ("server", 3),
+    "operational-zone-b-server-0": ("server", 4),
+    "contractor-network-server-0": ("server", 5),
+
+    
+    #users
+    "restricted-zone-a-user-0": ("user", 0),
+    "operational-zone-a-user-0": ("user", 1),
+    "restricted-zone-b-user-0": ("user", 2),
+    "operational-zone-b-user-0": ("user", 3),
+    "contractor-network-user-0": ("user", 4),
+    "contractor-network-user-1": ("user", 5),
+    "public-access-zone-user-0": ("user", 6),
+    "office-network-user-0": ("user", 7),
+    "office-network-user-1": ("user", 8),
+    "admin-network-user-0": ("user", 9),
+    
+
 }
 
 # subnets in alphabetical order - gotten from inspect_weights.py
@@ -32,6 +49,23 @@ CONTAINER_ROLES ={
 class ObservationGraphBuilder:
     def build_graph(self, network_state):
         raise NotImplementedError
+    
+    def classify_node_type(self, state):
+        servers, users, routers = [], [], []
+        for container in state["containers"]:
+            name = container["name"].replace("clab-cage4-defense-network-", "")
+            container["clean_name"] = name
+
+            if name.endswith("-router"):
+                routers.append(container)
+            elif name in CONTAINER_ROLES and CONTAINER_ROLES[name] is not None:
+                role = CONTAINER_ROLES[name][0]
+                if role == "server":
+                    servers.append(container)
+                else:
+                    users.append(container)
+
+        return servers, users, routers
 
     def encode_host(self, container, role, subnet_idx):
         features = [0.0] * FEATURE_DIM

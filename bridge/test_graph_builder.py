@@ -28,29 +28,17 @@ except Exception as e:
     print(f"Monitor failed ({e})")
     state = None
 
-for role_name, (role_type, slot, subnet_idx) in CONTAINER_ROLES.items():
-    print(f"{role_name:20} -> {role_type} slot {slot}")
+
+if state:
+    servers, users, routers = builder.classify_node_type(state)
+    print(f"  Servers: {len(servers)}")
+    print(f"  Users: {len(users)}")
+    print(f"  Routers: {len(routers)}")
 
 unmapped = []
 if state:
     for c in state["containers"]:
-        name = c["name"].replace("clab-fyp-defense-network-", "")
+        name = c["name"].replace("clab-cage4-defense-network-", "")
         if name not in CONTAINER_ROLES:
             unmapped.append(name)
     print(f"\nUnmapped (excluded): {unmapped}")
-
-
-print(f"\nSystem node encoding")
-test_cases = [
-    {"name": "web-server", "is_compromised": True},
-    {"name": "database",   "is_compromised": False},
-    {"name": "admin-ws",   "is_compromised": True},
-]
-for c in test_cases:
-    role, slot, subnet_idx = CONTAINER_ROLES[c["name"]]
-    feature_vector = builder.encode_host(c, role, subnet_idx)
-    non_zero = {idx: value for idx, value in enumerate(feature_vector) if value != 0.0}
-    status = "COMPROMISED" if c["is_compromised"] else "clean"
-    print(f"  {c['name']:20} [{status}]")
-    for pos, val in non_zero.items():
-        print(f"    [{pos}] = {val}")
