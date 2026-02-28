@@ -2,7 +2,7 @@ import docker
 import json
 from datetime import datetime
 
-CLAB_PREFIX = "clab-fyp-defense-network-"
+CLAB_PREFIX = "clab-cage4-defense-network-"
 
 
 class ContainerlabMonitor:

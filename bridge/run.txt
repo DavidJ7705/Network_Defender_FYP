@@ -6,3 +6,5 @@ sudo containerlab deploy -t fyp-topology.yaml
 # 2. Run the monitor
 cd /mnt/mac/Users/davidjayakumar/Desktop/FYP_PHASE2_NETWORK_DEFENDER/bridge
 sudo ./venv-linux/bin/python test_monitor.py
+
+sudo ~/fyp-venv-linux/bin/python test_graph_builder.py
