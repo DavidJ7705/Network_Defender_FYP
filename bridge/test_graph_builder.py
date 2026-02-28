@@ -35,9 +35,20 @@ if state:
     print(f"  Users: {len(users)}")
     print(f"  Routers: {len(routers)}")
 
+    print("\nServers List:")
     for server in servers:
         subnet_idx = builder.get_subnet_index(server["clean_name"])
         print(f"  Server: {server['clean_name']}, Subnet idx: {subnet_idx} features[{178+subnet_idx}]")
+
+    print("\nUsers List:")
+    for user in users:
+        subnet_idx = builder.get_subnet_index(user["clean_name"])
+        print(f"  User: {user['clean_name']}, Subnet idx: {subnet_idx} features[{178+subnet_idx}]")
+
+    print("\nRouters List:")
+    for router in routers:
+        subnet_idx = builder.get_subnet_index(router["clean_name"])
+        print(f"  Router: {router['clean_name']}, Subnet idx: {subnet_idx} features[{178+subnet_idx}]")
 
 unmapped = []
 if state:
