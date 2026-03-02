@@ -53,13 +53,15 @@ class ObservationGraphBuilder:
     def build_graph(self, network_state):
         servers, users, routers = self.classify_node_type(network_state)
         all_nodes = servers + users + routers
+        nodes_to_idx = {c["clean_name"]: i for i, c in enumerate(all_nodes)}
         print(f"Total node count: {len(all_nodes)}")
+        print(f"MAPPINGS: {list(nodes_to_idx.items())}")
 
 
         return None #for now 
 
-    
-        
+
+
     def classify_node_type(self, state):
         servers, users, routers = [], [], []
         for container in state["containers"]:
