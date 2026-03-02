@@ -1,3 +1,6 @@
+import torch
+from torch_geometric.data import Data
+
 FEATURE_DIM = 192
 
 NODE_TYPES = {
@@ -48,8 +51,15 @@ CONTAINER_ROLES ={
 
 class ObservationGraphBuilder:
     def build_graph(self, network_state):
-        raise NotImplementedError
+        servers, users, routers = self.classify_node_type(network_state)
+        all_nodes = servers + users + routers
+        print(f"Total node count: {len(all_nodes)}")
+
+
+        return None #for now 
+
     
+        
     def classify_node_type(self, state):
         servers, users, routers = [], [], []
         for container in state["containers"]:

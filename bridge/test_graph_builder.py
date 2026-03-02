@@ -74,3 +74,7 @@ for tc in test_cases:
     print(f"  {c['name']:42} [{status}]  role={role}")
     for pos, val in non_zero.items():
         print(f"    [{pos}] = {val}")
+
+
+if state:
+    result = builder.build_graph(state)
