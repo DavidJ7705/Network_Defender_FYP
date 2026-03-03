@@ -76,13 +76,21 @@ class ObservationGraphBuilder:
                     router_idx = nodes_to_idx[router["clean_name"]]
                     edge_index += [[host_idx, router_idx], [router_idx, host_idx]]
                     break
-                
-        # print(f"Total node count: {len(all_nodes)}")
-        # print(f"MAPPINGS: {list(nodes_to_idx.items())}")
-        print(f"Feature matrix shape:{x.shape}")
+
         print(f"Edge index shape: {len(edge_index)}")
         print(f"Edge index: {edge_index}")
 
+        #connecting subnet routers to internet router
+        internet_idx = nodes_to_idx["internet-router"]
+        for router in routers:
+            if router["clean_name"] != "internet-router" and internet_idx is not None:
+                router_idx = nodes_to_idx[router["clean_name"]]
+                edge_index += [[router_idx, internet_idx], [internet_idx, router_idx]]
+
+        # print(f"Total node count: {len(all_nodes)}")
+        # print(f"MAPPINGS: {list(nodes_to_idx.items())}")
+        # print(f"Feature matrix shape:{x.shape}")
+        print(f"total edges: {len(edge_index)}")
         return None #for now 
 
 
