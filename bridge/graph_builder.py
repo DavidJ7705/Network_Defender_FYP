@@ -91,7 +91,8 @@ class ObservationGraphBuilder:
         # print(f"MAPPINGS: {list(nodes_to_idx.items())}")
         # print(f"Feature matrix shape:{x.shape}")
         print(f"total edges: {len(edge_index)}")
-        return None #for now 
+        edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
+        return Data(x=x, edge_index=edge_index)
 
 
 
