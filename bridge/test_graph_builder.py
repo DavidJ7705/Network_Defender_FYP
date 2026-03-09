@@ -57,3 +57,24 @@ if state:
         if name not in CONTAINER_ROLES:
             unmapped.append(name)
     print(f"\nUnmapped (excluded): {unmapped}")
+
+print(f"\nSystem node encoding")
+test_cases = [
+    {"container": {"name": "restricted-zone-a-server-0", "is_compromised": True}, "role": "server"},
+    {"container": {"name": "admin-network-user-0", "is_compromised": False}, "role": "user"},
+    {"container": {"name": "internet-router", "is_compromised": False}, "role": "router"},
+]
+for tc in test_cases:
+    c = tc["container"]
+    role = tc["role"]
+    subnet_idx = builder.get_subnet_index(c["name"])
+    feature_vector = builder.encode_host(c, role, subnet_idx)
+    non_zero = {idx: value for idx, value in enumerate(feature_vector) if value != 0.0}
+    status = "COMPROMISED" if c["is_compromised"] else "clean"
+    print(f"  {c['name']:42} [{status}]  role={role}")
+    for pos, val in non_zero.items():
+        print(f"    [{pos}] = {val}")
+
+
+if state:
+    result = builder.build_graph(state)

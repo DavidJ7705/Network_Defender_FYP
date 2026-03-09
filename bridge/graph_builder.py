@@ -1,3 +1,6 @@
+import torch
+from torch_geometric.data import Data
+
 FEATURE_DIM = 192
 
 NODE_TYPES = {
@@ -48,8 +51,57 @@ CONTAINER_ROLES ={
 
 class ObservationGraphBuilder:
     def build_graph(self, network_state):
-        raise NotImplementedError
-    
+        servers, users, routers = self.classify_node_type(network_state)
+        all_nodes = servers + users + routers
+        nodes_to_idx = {c["clean_name"]: i for i, c in enumerate(all_nodes)}
+
+        # store so AgentAdapter can read consistent ordering without a second classify call
+        self._last_servers      = servers
+        self._last_users        = users
+        self._last_routers      = routers
+        self._last_nodes_to_idx = nodes_to_idx
+
+
+        #feature matrix construction
+        node_features = []
+        for c in all_nodes:
+            name = c["clean_name"]
+            subnet_idx = self.get_subnet_index(name)
+            role = "router" if name.endswith("-router") else CONTAINER_ROLES[name][0]
+            node_features.append(self.encode_host(c, role, subnet_idx))
+        x = torch.tensor(node_features, dtype = torch.float)
+        
+
+        #Build edge index
+        edge_index = []
+        for c in servers + users:
+            host_idx = nodes_to_idx[c["clean_name"]]
+            subnet_idx = self.get_subnet_index(c["clean_name"])
+            for router in routers:
+                if router["clean_name"] != "internet-router" and self.get_subnet_index(router["clean_name"]) == subnet_idx:
+                    router_idx = nodes_to_idx[router["clean_name"]]
+                    edge_index += [[host_idx, router_idx], [router_idx, host_idx]]
+                    break
+
+        print(f"Edge index shape: {len(edge_index)}")
+        print(f"Edge index: {edge_index}")
+
+        #connecting subnet routers to internet router
+        internet_idx = nodes_to_idx["internet-router"]
+        for router in routers:
+            if router["clean_name"] != "internet-router" and internet_idx is not None:
+                router_idx = nodes_to_idx[router["clean_name"]]
+                edge_index += [[router_idx, internet_idx], [internet_idx, router_idx]]
+
+        # print(f"Total node count: {len(all_nodes)}")
+        # print(f"MAPPINGS: {list(nodes_to_idx.items())}")
+        # print(f"Feature matrix shape:{x.shape}")
+        print(f"total edges: {len(edge_index)}")
+        edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
+        return Data(x=x, edge_index=edge_index)
+
+
+
     def classify_node_type(self, state):
         servers, users, routers = [], [], []
         for container in state["containers"]:
@@ -79,22 +131,24 @@ class ObservationGraphBuilder:
         elif "restricted-zone-b" in clean_name: return 8
         return 0
 
-    # def encode_host(self, container, role, subnet_idx):
-    #     features = [0.0] * FEATURE_DIM
+    def encode_host(self, container, role, subnet_idx):
+        features = [0.0] * FEATURE_DIM
 
-    #     features[14] = 1.0 #ubuntu
-    #     features[24] = 1.0 #linux
+        features[14] = 1.0 #ubuntu
+        features[24] = 1.0 #linux
 
-    #     if role == "server":
-    #         features[56] = 1.0 #server
-    #     else:
-    #         features[55] = 1.0 #user
+        if role == "server":
+            features[56] = 1.0 #server
+        elif role == "router":
+            features[57] = 1.0 #router
+        elif role == "user":
+            features[55] = 1.0 #user
 
-    #     features[178 +subnet_idx] = 1.0
+        features[178 +subnet_idx] = 1.0
 
-    #     if container.get("is_compromised"):
-    #         features[187] = 1.0
-    #         features[188] = 1.0
+        if container.get("is_compromised"):
+            features[187] = 1.0
+            features[188] = 1.0
         
-    #     return features
+        return features
     
