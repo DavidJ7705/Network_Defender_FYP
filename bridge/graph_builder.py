@@ -55,6 +55,12 @@ class ObservationGraphBuilder:
         all_nodes = servers + users + routers
         nodes_to_idx = {c["clean_name"]: i for i, c in enumerate(all_nodes)}
 
+        # store so AgentAdapter can read consistent ordering without a second classify call
+        self._last_servers      = servers
+        self._last_users        = users
+        self._last_routers      = routers
+        self._last_nodes_to_idx = nodes_to_idx
+
 
         #feature matrix construction
         node_features = []
