@@ -45,7 +45,7 @@ class AgentAdapter:
 
         # mission phase default: phase 0 (pre-attack) = [1, 0, 0]
         global_vec = torch.zeros(1, 3)
-        global_vec[0, 0] = 1.0
+        global_vec[0, 1] = 1.0
 
         state  = (x, ei, global_vec, server, node_server, user, node_user, action_edges, False)
         action = self.agent.get_action((state, False))
