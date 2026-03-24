@@ -155,3 +155,19 @@ class ActionExecutor:
             print(f"Error preparing decoy deployment for {clean_name}: {e}")
             return {"action_type": "DeployDecoy", "target": clean_name, "result": f"error: {e}"}
         
+    def cleanup_decoys(self):
+        for clean_name, yaml_path in list(self._decoys.items()):
+            topology_name = os.path.splitext(os.path.basename(yaml_path))[0]
+            result = subprocess.run(
+                ["clab", "destroy", "-t", yaml_path],
+                capture_output=True, text=True
+            )
+            if result.returncode == 0:
+                print(f"Decoy {clean_name} cleaned up")
+                del self._decoys[clean_name]
+                try:
+                    os.remove(yaml_path)
+                except Exception as e:
+                    pass  # Ignore errors in cleanup
+            else:
+                print(f"Error cleaning up decoy {clean_name}: {result.stderr}")
