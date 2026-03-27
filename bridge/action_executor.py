@@ -49,13 +49,21 @@ class ActionExecutor:
     def execute(self, action, servers, users):
         print(f"Executing action: {action}")
 
+
+        
+        if  64 <= action <=71:
+            print(f"Allow traffic {action}")
+            subnet_router = SUBNET_ROUTERS_SORTED[action - 64]
+            return self._allow_traffic(subnet_router)
+        if  72 <= action <=79:
+            print(f"Block traffic {action}")
+            subnet_router = SUBNET_ROUTERS_SORTED[action - 72]
+            return self._block_traffic(subnet_router)
+
         if action >= 80:
             print(f"Global action — Monitor")
             return {"action_type": "Monitor", "target": None, "result": "no operation yet implemented"}
         
-        if action >= 64:
-            print(f"Edge action {action}")
-            return {"action_type": "EdgeAction", "target": None, "result": "edge actions not implemented yet"}
         
         action_type_idx = action // MAX_HOSTS
         host_idx        = action % MAX_HOSTS
@@ -207,3 +215,13 @@ class ActionExecutor:
                     pass  # Ignore errors in cleanup
             else:
                 print(f"Error cleaning up decoy {clean_name}: {result.stderr}")
+
+    def _allow_traffic(self, subnet_router_name):
+        # Placeholder for allowing traffic logic
+        print(f"Allowing traffic to {subnet_router_name}")
+        return {"action_type": "AllowTraffic", "target": subnet_router_name, "result": "traffic allowed"}
+    
+    def _block_traffic(self, subnet_router_name):
+        # Placeholder for blocking traffic logic
+        print(f"Blocking traffic to {subnet_router_name}")
+        return {"action_type": "BlockTraffic", "target": subnet_router_name, "result": "traffic blocked"}
