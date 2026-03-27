@@ -39,12 +39,23 @@ SUBNET_GATEWAY = {
 
 SUBNET_ROUTERS_SORTED = sorted(SUBNET_CIDR.keys())
 
+SUBNET_RESTORE_VIA = {
+    "admin-network-router": "10.0.6.2",
+    "contractor-network-router": "10.0.0.10",
+    "office-network-router": "10.0.6.6",
+    "operational-zone-a-router": "10.0.1.2",
+    "operational-zone-b-router": "10.0.3.2",
+    "public-access-zone-router": "10.0.0.14",
+    "restricted-zone-a-router": "10.0.0.2",
+    "restricted-zone-b-router": "10.0.0.6",
+}
 
 
 class ActionExecutor:
     def __init__(self):
         self.client = docker.from_env()
         self._decoys = {}
+        self._blocks = {}
 
     def execute(self, action, servers, users):
         print(f"Executing action: {action}")
@@ -217,11 +228,33 @@ class ActionExecutor:
                 print(f"Error cleaning up decoy {clean_name}: {result.stderr}")
 
     def _allow_traffic(self, subnet_router_name):
-        # Placeholder for allowing traffic logic
-        print(f"Allowing traffic to {subnet_router_name}")
-        return {"action_type": "AllowTraffic", "target": subnet_router_name, "result": "traffic allowed"}
-    
+        if subnet_router_name not in self._blocks:
+            return {"action_type": "AllowTraffic", "target": subnet_router_name, "result": "not currently blocked"}
+        
+        full_gateway, cidr = self._blocks[subnet_router_name]
+        via = SUBNET_RESTORE_VIA[subnet_router_name]
+        try:
+            container = self.client.containers.get(full_gateway)
+            container.exec_run(f"ip route replace {cidr} via {via}")
+            del self._blocks[subnet_router_name]
+            print(f"Traffic to {subnet_router_name} allowed via {via}")
+            return {"action_type": "AllowTraffic", "target": subnet_router_name, "result": f"traffic allowed via {via}"}
+        except Exception as e:
+            print(f"Error allowing traffic to {subnet_router_name}: {e}")
+            return {"action_type": "AllowTraffic", "target": subnet_router_name, "result": f"error: {e}"}
+
     def _block_traffic(self, subnet_router_name):
-        # Placeholder for blocking traffic logic
-        print(f"Blocking traffic to {subnet_router_name}")
-        return {"action_type": "BlockTraffic", "target": subnet_router_name, "result": "traffic blocked"}
+        gateway = SUBNET_GATEWAY[subnet_router_name]
+        cidr = SUBNET_CIDR[subnet_router_name]
+        full_gateway = CLAB_PREFIX + gateway
+        try:
+            container = self.client.containers.get(full_gateway)
+            result = container.exec_run(f"ip route replace {cidr} blackhole")
+            if result.exit_code == 0:
+                self._blocks[subnet_router_name] = (full_gateway, cidr)
+                print(f"Traffic to {subnet_router_name} blocked via {gateway}")
+                return {"action_type": "BlockTraffic", "target": subnet_router_name, "result": "traffic blocked"}
+            return {"action_type": "BlockTraffic", "target": subnet_router_name, "result": f"error: {result.output.decode()}"}
+        except Exception as e:
+            print(f"Error blocking traffic to {subnet_router_name}: {e}")
+            return {"action_type": "BlockTraffic", "target": subnet_router_name, "result": f"error: {e}"}
