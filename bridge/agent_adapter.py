@@ -19,7 +19,7 @@ class AgentAdapter:
         self.agent = load(weights_path)
         self.builder = ObservationGraphBuilder()
 
-    def get_action(self, network_state):
+    def get_action(self, network_state, phase = 0):
         # build_graph stores _last_* attributes so ordering is guaranteed consistent
         graph = self.builder.build_graph(network_state)
         x     = graph.x
@@ -48,7 +48,7 @@ class AgentAdapter:
 
         # mission phase default: phase 0 (pre-attack) = [1, 0, 0]
         global_vec = torch.zeros(1, 3)
-        global_vec[0, 1] = 1.0
+        global_vec[0, phase] = 1.0
 
         state  = (x, ei, global_vec, server, node_server, user, node_user, action_edges, False)
         action = self.agent.get_action((state, False))
