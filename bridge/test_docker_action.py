@@ -8,8 +8,8 @@ Then watch watch_containers.py in Terminal 2 to see the effect.
 """
  
 import docker
-from action_executor import ActionExecutor
-
+from action_executor import ActionExecutor, SUBNET_ROUTERS_SORTED
+    
 
 PREFIX = "clab-cage4-defense-network-"
 client = docker.from_env()
@@ -41,6 +41,9 @@ print("  [3] Unblock  — unpause the container (undo Block)")
 print("  [4] Decoy Deploy  — deploy a honeypot container")
 print("  [5] Decoy Cleanup  — remove a deployed honeypot container")
 print("  [6] Compromise Cleanup  — remove compromise markers from the container")
+print("  [7] Allow Traffic  — allow traffic to the subnet router")
+print("  [8] Block Traffic  — block traffic to the subnet router")
+
  
 action = input("\nEnter action number: ").strip()
  
@@ -122,6 +125,24 @@ elif action == "6":
         print("Markers removed.")
     except Exception as e:
         print(f"Error during cleanup: {e}")
+
+elif action == "7":
+    print("\n Subnet routers (alphabetical order):")
+    for i, name in enumerate(SUBNET_ROUTERS_SORTED):
+        print(f"[{i}] {name}")
+    idx = int(input("\nEnter subnet router number to allow traffic: ").strip())
+    executor = ActionExecutor()
+    result = executor._allow_traffic(SUBNET_ROUTERS_SORTED[idx])
+    print(result)
+
+elif action == "8":
+    print("\n Subnet routers (alphabetical order):")
+    for i, name in enumerate(SUBNET_ROUTERS_SORTED):
+        print(f"[{i}] {name}")
+    idx = int(input("\nEnter subnet router number to block traffic: ").strip())
+    executor = ActionExecutor()
+    result = executor._block_traffic(SUBNET_ROUTERS_SORTED[idx])
+    print(result)
 
 
 else:

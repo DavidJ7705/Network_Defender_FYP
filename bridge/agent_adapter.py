@@ -38,7 +38,10 @@ class AgentAdapter:
 
         # action_edges: 8 subnet-router -> internet-router edges [2, 8]
         internet_idx   = nodes_to_idx["internet-router"]
-        subnet_routers = [r for r in routers if r["clean_name"] != "internet-router"]
+        subnet_routers = sorted(
+            [r for r in routers if r["clean_name"] != "internet-router"], 
+            key=lambda r: r["clean_name"]
+        )
         src = torch.tensor([nodes_to_idx[r["clean_name"]] for r in subnet_routers], dtype=torch.long)
         dst = torch.tensor([internet_idx] * len(subnet_routers), dtype=torch.long)
         action_edges = torch.stack([src, dst])
