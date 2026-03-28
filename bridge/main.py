@@ -1,3 +1,6 @@
+import signal
+import sys
+
 from network_monitor import ContainerlabMonitor
 from graph_builder import ObservationGraphBuilder
 from agent_adapter import AgentAdapter
@@ -16,10 +19,16 @@ detector = IntrusionDetector()
 #initial calssification to get red agents container lsit
 state = monitor.get_network_state()
 servers, users, routers = builder.classify_node_type(state)
-containers = servers + users 
+all_containers = servers + users 
 
-red_agent = RedAgent(containers, decoys=executor._decoys)
+red_agent = RedAgent(all_containers, decoys=executor._decoys)
 
+def shutdown(sig, frame):
+    print("\nShutting down...")
+    executor.cleanup_decoys()
+    detector.cleanup_flags(all_containers)
+    sys.exit(0)
+signal.signal(signal.SIGINT, shutdown)
 
 def run(total_steps = MAX_STEPS):
     print(f"Network Defender - Starting @{total_steps} steps per episode\n")
@@ -42,7 +51,7 @@ def run(total_steps = MAX_STEPS):
         compromises = detector.scan(all_containers)
 
         #Blue agent acts
-        action_int = adapter.get_action(state, phase, red_agent.host_states)
+        action_int = adapter.get_action(state, phase, red_agent.host_states, compromises)
         result = executor.execute(action_int, servers, users)
         print(f"[BLUE] action={action_int} {result['action_type']} on {result['target']} - {result['result']}")
         print()
