@@ -19,9 +19,9 @@ class AgentAdapter:
         self.agent = load(weights_path)
         self.builder = ObservationGraphBuilder()
 
-    def get_action(self, network_state, phase = 0):
+    def get_action(self, network_state, phase = 0, host_states = None):
         # build_graph stores _last_* attributes so ordering is guaranteed consistent
-        graph = self.builder.build_graph(network_state)
+        graph = self.builder.build_graph(network_state, host_states=host_states)
         x     = graph.x
         ei    = graph.edge_index
 

@@ -45,7 +45,7 @@ def run(total_steps = MAX_STEPS):
         graph = builder.build_graph(state, compromises)
 
         #Blue agent acts
-        action_int = adapter.get_action(state, phase)
+        action_int = adapter.get_action(state, phase, red_agent.host_states)
         result = executor.execute(action_int, servers, users)
         print(f"[BLUE] action={action_int} {result['action_type']} on {result['target']} - {result['result']}")
         print()
