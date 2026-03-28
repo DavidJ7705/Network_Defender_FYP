@@ -1,17 +1,18 @@
 import docker
+import random
 
 CLAB_PREFIX = "clab-cage4-defense-network-"
 
 ACTION_NAMES = [
-    DiscoverRemoteSystems,          #0
-    AggressiveServiceDiscovery,     #1
-    StealthServiceDiscovery,        #2
-    DiscoverDeception,              #3
-    ExploitRemoteService,           #4
-    PrivilegeEscalate,              #5
-    Impact,                         #6
-    DegradeServices,                #7
-    Withdraw                        #8
+    "DiscoverRemoteSystems",       
+    "AggressiveServiceDiscovery",  
+    "StealthServiceDiscovery",     
+    "DiscoverDeception",           
+    "ExploitRemoteService",        
+    "PrivilegeEscalate",           
+    "Impact",                      
+    "DegradeServices",             
+    "Withdraw"                     
 ]
 
 
@@ -69,3 +70,33 @@ class RedAgent:
             'RD' : [None, None, None, None, None, None, 0.5,  0.5,  0.0 ],
         }
         return map
+
+    def _choose_host_and_action(self):
+        #filter out the failed hosts
+        active = [h for h, v in self.host_states.items() if v["state"] !="F"]
+        if not active:
+            return None, None
+        
+        #preference 75% chance of a server target when both types are available
+        servers = [h for h in active if "server" in h]
+        users = [h for h in active if "server" not in h]
+        if servers and users:
+            chosen_host = random.choice(servers) if random.random() <= 0.75 else random.choice(users)
+        else:
+            chosen_host = random.choice(active)
+
+        state = self.host_states[chosen_host]["state"]
+        probs  =self.state_transitions_probability.get(state)
+        if probs is None:
+            return chosen_host, 0 
+        
+        #Building a valid action list with weights
+        options = [(i, p) for i, p in enumerate(probs) if p is not None and p > 0]
+        if not options:
+            return chosen_host, 0
+        
+        indices, weights = zip(*options)
+        total = sum(weights)
+        weights = [w / total for w in weights]
+        action_idx = random.choices(indices, weights=weights, k=1)[0]
+        return chosen_host,action_idx
