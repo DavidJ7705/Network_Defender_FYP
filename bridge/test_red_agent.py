@@ -26,5 +26,6 @@ for i in range(20):
     host, action_idx = agent._choose_host_and_action()
     action_name = ACTION_NAMES[action_idx]
     success = agent._execute_action(host, action_idx)
+    agent._transition_state(host, action_idx, success)
     print(f"Step {i+1}: {action_name} on {host} — success={success}\n")
 

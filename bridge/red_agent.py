@@ -169,3 +169,19 @@ class RedAgent:
             return True
         
         return False
+
+    def _transition_state(self, host, action_idx, success):
+
+        curr_state = self.host_states[host]['state']
+        matrix = self.state_transitions_success if success \
+            else self.state_transitions_failure
+        
+        row = matrix.get(curr_state)
+
+        if row is None:
+            return
+        next_state = row[action_idx]
+        
+        if next_state is not None:
+            self.host_states[host]['state'] = next_state
+            print(f"[RED] {host} state: {curr_state} > {next_state}")
