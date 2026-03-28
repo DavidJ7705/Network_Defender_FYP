@@ -41,9 +41,6 @@ def run(total_steps = MAX_STEPS):
         #Intrusion detector scans containers
         compromises = detector.scan(all_containers)
 
-        #Blue agent observes - continued
-        graph = builder.build_graph(state, compromises)
-
         #Blue agent acts
         action_int = adapter.get_action(state, phase, red_agent.host_states)
         result = executor.execute(action_int, servers, users)
