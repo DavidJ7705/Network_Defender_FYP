@@ -143,6 +143,8 @@ class ActionExecutor:
             container = self.client.containers.get(full_name)
             container.reload()
             net_names = list(container.attrs["NetworkSettings"]["Networks"].keys())
+            if not net_names:
+                return {"action_type": "Remove", "target": clean_name, "result": "already blocked"}
             mgmt_network = next((n for n in net_names if n.startswith("clab")), net_names[0])
             self.client.networks.get(mgmt_network).disconnect(container)
             print(f"[Executor] Blocked {clean_name} — disconnected from {mgmt_network}")
@@ -227,6 +229,16 @@ class ActionExecutor:
             else:
                 print(f"Error cleaning up decoy {clean_name}: {result.stderr}")
 
+    def cleanup_stale_decoys(self):
+        import glob
+        for yaml_path in glob.glob("/tmp/decoy_*.yaml"):
+            subprocess.run(["clab", "destroy", "-t", yaml_path],
+                        capture_output=True, text=True)
+            try:
+                os.remove(yaml_path)
+            except Exception:
+                pass
+
     def _allow_traffic(self, subnet_router_name):
         if subnet_router_name not in self._blocks:
             return {"action_type": "AllowTraffic", "target": subnet_router_name, "result": "not currently blocked"}
@@ -249,7 +261,7 @@ class ActionExecutor:
         full_gateway = CLAB_PREFIX + gateway
         try:
             container = self.client.containers.get(full_gateway)
-            result = container.exec_run(f"ip route replace {cidr} blackhole")
+            result = container.exec_run(f"ip route replace blackhole {cidr}")
             if result.exit_code == 0:
                 self._blocks[subnet_router_name] = (full_gateway, cidr)
                 print(f"Traffic to {subnet_router_name} blocked via {gateway}")

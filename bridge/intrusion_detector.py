@@ -36,3 +36,13 @@ class IntrusionDetector:
         except Exception as e:
             print(f"  [IntrusionDetector] could not scan {clean_name}: {e}")
             return 0
+
+    def cleanup_flags(self, containers):
+        for c in containers:
+            name = c["clean_name"]
+            full_name = CLAB_PREFIX + name
+            try:
+                container = self.client.containers.get(full_name)
+                container.exec_run("rm -f /root/.compromised /tmp/.compromised /tmp/junk /tmp/degraded")
+            except Exception:
+                pass

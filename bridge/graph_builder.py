@@ -50,7 +50,7 @@ CONTAINER_ROLES ={
 # [187]  tabular: was_compromised
 
 class ObservationGraphBuilder:
-    def build_graph(self, network_state, compromise_map=None):
+    def build_graph(self, network_state, compromise_map=None, host_states=None):
         servers, users, routers = self.classify_node_type(network_state)
         all_nodes = servers + users + routers
         nodes_to_idx = {c["clean_name"]: i for i, c in enumerate(all_nodes)}
@@ -71,7 +71,7 @@ class ObservationGraphBuilder:
             name = c["clean_name"]
             subnet_idx = self.get_subnet_index(name)
             role = "router" if name.endswith("-router") else CONTAINER_ROLES[name][0]
-            node_features.append(self.encode_host(c, role, subnet_idx))
+            node_features.append(self.encode_host(c, role, subnet_idx, host_states))
         x = torch.tensor(node_features, dtype = torch.float)
         
 
@@ -86,8 +86,8 @@ class ObservationGraphBuilder:
                     edge_index += [[host_idx, router_idx], [router_idx, host_idx]]
                     break
 
-        print(f"Edge index shape: {len(edge_index)}")
-        print(f"Edge index: {edge_index}")
+        # print(f"Edge index shape: {len(edge_index)}")
+        # print(f"Edge index: {edge_index}")
 
         #connecting subnet routers to internet router
         internet_idx = nodes_to_idx["internet-router"]
@@ -99,7 +99,7 @@ class ObservationGraphBuilder:
         # print(f"Total node count: {len(all_nodes)}")
         # print(f"MAPPINGS: {list(nodes_to_idx.items())}")
         # print(f"Feature matrix shape:{x.shape}")
-        print(f"total edges: {len(edge_index)}")
+        # print(f"total edges: {len(edge_index)}")
         edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
         return Data(x=x, edge_index=edge_index)
 
@@ -134,7 +134,7 @@ class ObservationGraphBuilder:
         elif "restricted-zone-b" in clean_name: return 8
         return 0
 
-    def encode_host(self, container, role, subnet_idx):
+    def encode_host(self, container, role, subnet_idx, host_states= None):
         features = [0.0] * FEATURE_DIM
 
         features[14] = 1.0 #ubuntu
@@ -153,6 +153,11 @@ class ObservationGraphBuilder:
         if level >= 1:
             features[187] = 1.0
 
+        name = container.get("clean_name","")
+        if host_states:
+            red_state = host_states.get(name, {}).get('state','K')
+            if red_state in ("S", "SD", "U", "UD", "R", "RD"):
+                features[188] = 1.0
         
         return features
     
