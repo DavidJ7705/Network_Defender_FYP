@@ -1,0 +1,39 @@
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Spin up test topology
+        run: docker compose -f docker-compose.test.yml up -d
+
+      - name: Wait for containers to be ready
+        run: sleep 5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install torch==2.6.0+cpu numpy --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install torch-geometric docker pytest coverage pyyaml
+
+      - name: Run tests with coverage
+        run: |
+          cd bridge
+          python -m coverage run --omit="*/tmp/*" -m pytest tests/ -v
+          python -m coverage report --omit="*/tmp/*"
+
+      - name: Tear down test topology
+        if: always()
+        run: docker compose -f docker-compose.test.yml down

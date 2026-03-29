@@ -33,3 +33,6 @@ docker exec clab-cage4-defense-network-restricted-zone-a-server-0 \
 # Verify they exist
 docker exec clab-cage4-defense-network-restricted-zone-a-server-0 \
     ls /tmp/.compromised /root/.compromised
+
+
+sudo ~/fyp-venv-linux/bin/python tests/test_docker_action.py

@@ -1,0 +1,154 @@
+networks:
+  clab-test:
+    name: clab-test
+
+services:
+  internet-router:
+    container_name: clab-cage4-defense-network-internet-router
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  restricted-zone-a-router:
+    container_name: clab-cage4-defense-network-restricted-zone-a-router
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  restricted-zone-a-server-0:
+    container_name: clab-cage4-defense-network-restricted-zone-a-server-0
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  restricted-zone-a-server-1:
+    container_name: clab-cage4-defense-network-restricted-zone-a-server-1
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  restricted-zone-a-user-0:
+    container_name: clab-cage4-defense-network-restricted-zone-a-user-0
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  operational-zone-a-router:
+    container_name: clab-cage4-defense-network-operational-zone-a-router
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  operational-zone-a-server-0:
+    container_name: clab-cage4-defense-network-operational-zone-a-server-0
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  operational-zone-a-user-0:
+    container_name: clab-cage4-defense-network-operational-zone-a-user-0
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  restricted-zone-b-router:
+    container_name: clab-cage4-defense-network-restricted-zone-b-router
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  restricted-zone-b-server-0:
+    container_name: clab-cage4-defense-network-restricted-zone-b-server-0
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  restricted-zone-b-user-0:
+    container_name: clab-cage4-defense-network-restricted-zone-b-user-0
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  operational-zone-b-router:
+    container_name: clab-cage4-defense-network-operational-zone-b-router
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  operational-zone-b-server-0:
+    container_name: clab-cage4-defense-network-operational-zone-b-server-0
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  operational-zone-b-user-0:
+    container_name: clab-cage4-defense-network-operational-zone-b-user-0
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  contractor-network-router:
+    container_name: clab-cage4-defense-network-contractor-network-router
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  contractor-network-server-0:
+    container_name: clab-cage4-defense-network-contractor-network-server-0
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  contractor-network-user-0:
+    container_name: clab-cage4-defense-network-contractor-network-user-0
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  contractor-network-user-1:
+    container_name: clab-cage4-defense-network-contractor-network-user-1
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  public-access-zone-router:
+    container_name: clab-cage4-defense-network-public-access-zone-router
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  public-access-zone-user-0:
+    container_name: clab-cage4-defense-network-public-access-zone-user-0
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  admin-network-router:
+    container_name: clab-cage4-defense-network-admin-network-router
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  admin-network-user-0:
+    container_name: clab-cage4-defense-network-admin-network-user-0
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  office-network-router:
+    container_name: clab-cage4-defense-network-office-network-router
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  office-network-user-0:
+    container_name: clab-cage4-defense-network-office-network-user-0
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
+
+  office-network-user-1:
+    container_name: clab-cage4-defense-network-office-network-user-1
+    image: alpine:latest
+    command: sleep infinity
+    networks: [clab-test]
