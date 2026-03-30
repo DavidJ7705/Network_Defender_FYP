@@ -34,3 +34,21 @@ def test_servers_and_users_classified():
     assert len(servers) > 0
     assert len(users) > 0
     assert len(routers) > 0
+
+
+def test_feature_indices():
+    monitor = ContainerlabMonitor()
+    builder = ObservationGraphBuilder()
+    state = monitor.get_network_state()
+    graph = builder.build_graph(state, processes=state.get("processes", {}))
+    nodes = builder._last_servers + builder._last_users + builder._last_routers
+
+    for i, c in enumerate(nodes):
+        row = graph.x[i]
+        non_zero = {idx: round(float(row[idx]), 1) for idx in range(192) if row[idx] != 0.0}
+        print(f"{c['clean_name']}: {non_zero}")
+
+    # every node has exactly one subnet bit set
+    for i, c in enumerate(nodes):
+        subnet_bits = sum(float(graph.x[i][178 + j]) for j in range(9))
+        assert subnet_bits == 1.0, f"{c['clean_name']} subnet one-hot invalid"

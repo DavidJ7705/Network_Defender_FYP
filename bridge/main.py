@@ -55,7 +55,7 @@ def run(total_steps = MAX_STEPS):
         compromises = detector.scan(all_containers)
 
         #Blue agent acts
-        action_int = adapter.get_action(state, phase, red_agent.host_states, compromises)
+        action_int = adapter.get_action(state, phase, red_agent.host_states, compromises, decoys=executor._decoys)
         result = executor.execute(action_int, servers, users)
         print(f"[BLUE] action={action_int} {result['action_type']} on {result['target']} - {result['result']}")
         print()

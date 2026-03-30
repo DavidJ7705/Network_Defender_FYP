@@ -36,3 +36,9 @@ docker exec clab-cage4-defense-network-restricted-zone-a-server-0 \
 
 
 sudo ~/fyp-venv-linux/bin/python tests/test_docker_action.py
+
+davidjayakumar@ubuntu:/mnt/mac/Users/davidjayakumar/Desktop/FYP_Phase2_Network_Defender/bridge/tests$ sudo PYTHONPATH=/mnt/mac/Users/davidjayakumar/Desktop/FYP_Phase2_Network_Defender/bridge ~/fyp-venv-linux/bin/python test_docker_action.py
+
+
+davidjayakumar@Davids-MBP trained-agent % source /Users/davidjayakumar/Desktop/FYP_Phase2_Network_Defender/trained-agent/venv/bin/activate
+(venv) davidjayakumar@Davids-MBP trained-agent % python3 inspect_weights.py

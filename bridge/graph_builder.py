@@ -50,7 +50,7 @@ CONTAINER_ROLES ={
 # [187]  tabular: was_compromised
 
 class ObservationGraphBuilder:
-    def build_graph(self, network_state, compromise_map=None, host_states=None):
+    def build_graph(self, network_state, compromise_map=None, host_states=None, decoys=None, processes=None):
         servers, users, routers = self.classify_node_type(network_state)
         all_nodes = servers + users + routers
         nodes_to_idx = {c["clean_name"]: i for i, c in enumerate(all_nodes)}
@@ -71,7 +71,7 @@ class ObservationGraphBuilder:
             name = c["clean_name"]
             subnet_idx = self.get_subnet_index(name)
             role = "router" if name.endswith("-router") else CONTAINER_ROLES[name][0]
-            node_features.append(self.encode_host(c, role, subnet_idx, host_states))
+            node_features.append(self.encode_host(c, role, subnet_idx, host_states, processes=processes, decoys=decoys))
         x = torch.tensor(node_features, dtype = torch.float)
         
 
@@ -134,9 +134,17 @@ class ObservationGraphBuilder:
         elif "restricted-zone-b" in clean_name: return 8
         return 0
 
-    def encode_host(self, container, role, subnet_idx, host_states= None):
+    def encode_host(self, container, role, subnet_idx, host_states= None, processes=None, decoys=None):
         features = [0.0] * FEATURE_DIM
 
+        #node type
+        if role in ("server", "user"):
+            features[0] = 1.0 #system node
+        else:
+            features[3] = 1.0 #internet node
+
+        #Architecture and OS
+        features[5] = 1.0 #x64
         features[14] = 1.0 #ubuntu
         features[24] = 1.0 #linux
 
@@ -158,6 +166,29 @@ class ObservationGraphBuilder:
             red_state = host_states.get(name, {}).get('state','K')
             if red_state in ("S", "SD", "U", "UD", "R", "RD"):
                 features[188] = 1.0
-        
+
+        #Process based features from ps
+        if processes:
+            proc = processes.get(name, [])
+            cmds = " ".join(p.get("command", "") for p in proc).lower() if isinstance(proc, list) else ""
+            features[60] = 1.0
+            features[78] = 1.0
+            features[101] = 1.0
+            if "sshd" in cmds:
+                features[64] = 1.0
+                features[88] = 1.0
+            if "apache2" in cmds or "nginx" in cmds:
+                features[70] = 1.0
+                features[93] = 1.0
+
+        #Suspicious pid
+        if level >=1:
+            features[99] = 1.0
+
+        #decoy flags 
+        if decoys and name in decoys:
+            features[100] = 1.0 #is decoy?
+            features[102] = 1.0 #is ephemeral
+
         return features
     
