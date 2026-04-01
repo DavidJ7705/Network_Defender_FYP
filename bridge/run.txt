@@ -42,3 +42,7 @@ davidjayakumar@ubuntu:/mnt/mac/Users/davidjayakumar/Desktop/FYP_Phase2_Network_D
 
 davidjayakumar@Davids-MBP trained-agent % source /Users/davidjayakumar/Desktop/FYP_Phase2_Network_Defender/trained-agent/venv/bin/activate
 (venv) davidjayakumar@Davids-MBP trained-agent % python3 inspect_weights.py
+
+sudo ~/fyp-venv-linux/bin/python -m pytest tests/test_graph_builder.py tests/test_agent_adapter.py -v
+
+sudo ~/fyp-venv-linux/bin/python -m pytest tests/ -v

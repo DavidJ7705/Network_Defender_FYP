@@ -4,7 +4,7 @@ from network_monitor import ContainerlabMonitor
 from agent_adapter import AgentAdapter
 
 WEIGHTS_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "trained-agent", "weights", "gnn_ppo-0.pt"
+    os.path.dirname(__file__), "..", "..", "trained-agent", "weights", "gnn_ppo-0.pt"
 )
 
 

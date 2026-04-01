@@ -1,9 +1,22 @@
+import pytest
 import docker
 from network_monitor import ContainerlabMonitor
 from intrusion_detector import IntrusionDetector
 from graph_builder import ObservationGraphBuilder
 
 PREFIX = "clab-cage4-defense-network-"
+
+
+@pytest.fixture(autouse=True)
+def clean_flags():
+    monitor = ContainerlabMonitor()
+    builder = ObservationGraphBuilder()
+    detector = IntrusionDetector()
+    state = monitor.get_network_state()
+    servers, users, _ = builder.classify_node_type(state)
+    detector.cleanup_flags(servers + users)
+    yield
+    detector.cleanup_flags(servers + users)
 
 
 def test_clean_state():

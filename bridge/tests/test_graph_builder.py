@@ -5,7 +5,7 @@ from graph_builder import FEATURE_DIM, ObservationGraphBuilder
 from network_monitor import ContainerlabMonitor
 
 WEIGHTS_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "trained-agent", "weights", "gnn_ppo-0.pt"
+    os.path.dirname(__file__), "..", "..", "trained-agent", "weights", "gnn_ppo-0.pt"
 )
 
 
