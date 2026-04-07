@@ -27,3 +27,16 @@ sg = EnterpriseScenarioGenerator(
 cyborg = CybORG(sg, "sim")
 wrapped_cyborg = Submission.wrap(cyborg)
 observations, _ = wrapped_cyborg.reset()
+
+actions = {
+    name: agent.get_acitons(observations[name], wrapped_cyborg.get_action_space(name))
+    for name, agent in Submission.AGENTS.items()
+    if name in wrapped_cyborg.agents
+}
+
+action_int = actions.get("blue_agent_0")
+if action_int is None or action_int >= 64:
+    action_type = "Monitor"
+else:
+    action_type = ["Analyse", "Block", "Restore", "DeployDecoy"][action_int // 16]
+
