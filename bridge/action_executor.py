@@ -56,6 +56,7 @@ class ActionExecutor:
         self.client = docker.from_env()
         self._decoys = {}
         self._blocks = {}
+        self._blocked_hosts = set()
 
     def execute(self, action, servers, users):
         print(f"Executing action: {action}")
@@ -147,6 +148,7 @@ class ActionExecutor:
                 return {"action_type": "Remove", "target": clean_name, "result": "already blocked"}
             mgmt_network = next((n for n in net_names if n.startswith("clab")), net_names[0])
             self.client.networks.get(mgmt_network).disconnect(container)
+            self._blocked_hosts.add(clean_name)
             print(f"[Executor] Blocked {clean_name} — disconnected from {mgmt_network}")
             return {"action_type": "Remove", "target": clean_name, "result": "blocked"}
         except Exception as e:
@@ -154,6 +156,7 @@ class ActionExecutor:
             return {"action_type": "Remove", "target": clean_name, "result": f"error: {e}"}
 
     def _restore(self, full_name, clean_name):
+        self._blocked_hosts.discard(clean_name)
         try:
             container = self.client.containers.get(full_name)
             container.reload()

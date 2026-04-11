@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>CAGE4 Network Defense - V4</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d1117; color: #e6edf3;
+      font-family: 'Segoe UI', monospace;
+      display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+    }
+
+    /* ── Header ── */
+    #header {
+      background: #161b22; border-bottom: 1px solid #30363d;
+      padding: 0 18px; display: flex; align-items: center; gap: 12px;
+      flex-shrink: 0; height: 42px;
+    }
+    #header h1 { font-size: 13px; font-weight: 600; color: #58a6ff; letter-spacing: 1.5px; }
+    #dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #3fb950; box-shadow: 0 0 6px #3fb950;
+      animation: pg 2s infinite; flex-shrink: 0;
+    }
+    @keyframes pg { 0%,100%{opacity:1} 50%{opacity:.35} }
+    #mission-badge {
+      margin-left: auto; background: #21262d; border: 1px solid #30363d;
+      border-radius: 20px; padding: 4px 16px; font-size: 13px; color: #8b949e;
+      display: flex; align-items: center; gap: 12px; white-space: nowrap;
+    }
+    .mb-phase { color: #58a6ff; font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; transition: color 0.4s; }
+    .mb-step b { color: #c9d1d9; font-size: 16px; }
+    .mb-div { width: 1px; height: 16px; background: #30363d; }
+
+    /* ── Top info bar ── */
+    #top-bar {
+      background: #161b22; border-bottom: 1px solid #30363d;
+      flex-shrink: 0; padding: 7px 14px;
+    }
+
+    /* Stats row */
+    #stats-row { display: flex; gap: 6px; align-items: stretch; }
+    .stat-box {
+      flex: 1; background: #21262d; border-radius: 6px; padding: 5px 4px;
+      display: flex; flex-direction: column; align-items: center; min-width: 0;
+    }
+    .stat-box .sv { font-size: 22px; font-weight: 700; line-height: 1; }
+    .stat-box .sl { font-size: 7.5px; color: #8b949e; margin-top: 2px; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
+    .sv-r   { color: #f85149; }
+    .sv-g   { color: #58a6ff; }
+    .sv-o   { color: #e3b341; }
+    .sv-blk { color: #f078aa; }
+    .sv-rest{ color: #1a7f37; }
+    .sv-anal{ color: #a371f7; }
+    .sv-zone{ color: #f0883e; }
+
+    /* FSM row */
+    #fsm-bar { display: flex; align-items: center; gap: 5px; }
+    .fsm-tag { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #484f58; flex-shrink: 0; margin-right: 2px; }
+    .fsm-chip { flex: 1; text-align: center; border-radius: 4px; padding: 3px 2px; display: flex; flex-direction: column; align-items: center; min-width: 0; }
+    .fc-n { font-size: 16px; font-weight: 700; line-height: 1; }
+    .fc-l { font-size: 7px; opacity: 0.75; margin-top: 1px; }
+    .fc-K  { background:#21262d; color:#8b949e; }
+    .fc-KD { background:#2a1f00; color:#c9a227; }
+    .fc-S  { background:#2d1f00; color:#e3b341; }
+    .fc-SD { background:#2d2300; color:#d4a017; }
+    .fc-U  { background:#2d0f0f; color:#f85149; }
+    .fc-UD { background:#380d0d; color:#ff6b6b; }
+    .fc-R  { background:#3d0000; color:#ff7b72; }
+    .fc-RD { background:#480000; color:#ffa198; }
+    .fc-F  { background:#191919; color:#484f58; }
+
+    /* ── Main ── */
+    #main { display: flex; flex: 1; overflow: hidden; }
+    #graph-panel { flex: 1; position: relative; background: #0d1117; overflow: hidden; }
+    #graph-panel > svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+    /* Legend overlay */
+    #graph-legend {
+      position: absolute; bottom: 48px; right: 12px;
+      background: rgba(22,27,34,0.93); border: 1px solid #30363d;
+      border-radius: 6px; padding: 7px 11px; z-index: 10;
+    }
+    .gl-title { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #484f58; margin-bottom: 5px; }
+    .gl-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 9.5px; color: #8b949e; }
+    .gl-dot { width: 8px; height: 8px; flex-shrink: 0; }
+
+    /* Event log */
+    #evlog-panel { width: 274px; background: #161b22; border-left: 1px solid #30363d; display: flex; flex-direction: column; flex-shrink: 0; position: relative; transition: width 0.18s ease; overflow: hidden; min-width: 36px; }
+    #evlog-panel .el-head { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #484f58; padding: 9px 10px 6px 14px; border-bottom: 1px solid #21262d; flex-shrink: 0; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+    #evlog-scroll { flex: 1; overflow-y: auto; padding: 7px 9px; scrollbar-width: thin; scrollbar-color: #30363d #161b22; }
+    #evlog-scroll::-webkit-scrollbar { width: 4px; }
+    #evlog-scroll::-webkit-scrollbar-track { background: #161b22; }
+    #evlog-scroll::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+    .ev { display: grid; grid-template-columns: 20px 30px 1fr; gap: 4px; margin-bottom: 5px; font-size: 10px; line-height: 1.35; align-items: start; }
+    .ev-step { color: #484f58; font-size: 8.5px; text-align: right; padding-top: 2px; }
+    .eb { border-radius: 3px; padding: 1px 4px; font-size: 7.5px; font-weight: 700; text-transform: uppercase; display: inline-block; }
+    .eb-r { background: #3d0000; color: #f85149; }
+    .eb-b { background: #0d1b35; color: #58a6ff; }
+    .ev-text { color: #8b949e; font-size: 9.5px; }
+    .ev-text b { color: #c9d1d9; }
+    .el-head-title { flex: 1; }
+    #evlog-collapse-btn { background: none; border: none; color: #484f58; cursor: pointer; font-size: 13px; padding: 0 2px; line-height: 1; flex-shrink: 0; }
+    #evlog-collapse-btn:hover { color: #8b949e; }
+    #evlog-resize { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; cursor: col-resize; z-index: 20; }
+    #evlog-resize:hover { background: rgba(88,166,255,0.12); }
+    .evlog-no-transition { transition: none !important; }
+    .evlog-collapsed #evlog-scroll { visibility: hidden; }
+    .evlog-collapsed .el-head-title { opacity: 0; }
+
+    /* ── FSM overlay ── */
+    #fsm-overlay {
+      position: absolute; top: 12px; left: 12px;
+      background: rgba(22,27,34,0.93); border: 1px solid #30363d;
+      border-radius: 6px; padding: 7px 10px; z-index: 10;
+    }
+    .fov-row { display: flex; align-items: center; gap: 7px; margin-bottom: 3px; }
+    .fov-row:last-child { margin-bottom: 0; }
+    .fov-chip { font-size: 8px; font-weight: 700; min-width: 22px; text-align: center; border-radius: 3px; padding: 2px 4px; }
+    .fov-cnt { font-size: 13px; font-weight: 700; min-width: 18px; text-align: right; color: #c9d1d9; }
+
+    /* ── Controls ── */
+    #controls {
+      background: #161b22; border-top: 1px solid #30363d;
+      padding: 6px 14px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; height: 40px;
+    }
+    .ctrl-btn { background: #21262d; border: 1px solid #30363d; color: #e6edf3; border-radius: 5px; padding: 3px 12px; font-size: 11px; cursor: pointer; font-family: inherit; }
+    .ctrl-btn:hover { background: #30363d; }
+    .ctrl-btn.active { background: #1f6feb; border-color: #388bfd; }
+    #progress-wrap { flex: 1; display: flex; flex-direction: column; gap: 3px; margin: 0 6px; }
+    #progress-bar { height: 3px; background: #21262d; border-radius: 2px; overflow: hidden; }
+    #progress-fill { height: 100%; background: #58a6ff; width: 0%; transition: width 0.25s; border-radius: 2px; }
+    #progress-label { font-size: 8.5px; color: #484f58; }
+    #speed-wrap { font-size: 10px; color: #8b949e; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+    #speed-input { background: #21262d; color: #e6edf3; border: 1px solid #30363d; border-radius: 3px; padding: 2px 4px; font-size: 10px; cursor: pointer; }
+
+    /* ── Graph node/link styles ── */
+    .link      { stroke: #30363d; stroke-width: 1.5; }
+    .link.rr   { stroke: #484f58; stroke-width: 2; }
+    .link-zone-blocked { stroke: #f0883e; stroke-width: 1.5; stroke-dasharray: 6,4; opacity: 0.65; }
+    .decoy-link { stroke: #e3b341; stroke-width: 1; stroke-dasharray: 4,3; opacity: 0.55; }
+    .hull { fill-opacity:.07; stroke-opacity:.3; stroke-width:1.5; stroke-dasharray:4,3; }
+    .node { cursor: pointer; }
+    .node:hover > * { filter: brightness(1.5); }
+
+    .n-router         { fill: #21262d; stroke: #484f58; stroke-width: 1.5; }
+    .n-router-blocked { fill: #1c0900; stroke: #f0883e; stroke-width: 2.5; stroke-dasharray: 4,2; animation: rb 1.5s infinite; }
+    @keyframes rb { 0%,100%{filter:drop-shadow(0 0 3px #f0883e)} 50%{filter:drop-shadow(0 0 10px #f0883e)} }
+
+    .n-internet { fill: #161b22; stroke: #58a6ff; stroke-width: 2; }
+    .n-server   { fill: #1f6feb; stroke: #388bfd; stroke-width: 1.5; }
+    .n-user     { fill: #1f6feb; stroke: #388bfd; stroke-width: 1.5; }
+    .n-comp     { fill: #da3633; stroke: #f85149; stroke-width: 2; animation: pr 1s infinite; }
+    .n-rest     { fill: #1a7f37; stroke: #3fb950; stroke-width: 2; }
+    .n-anal     { fill: #6e40c9; stroke: #a371f7; stroke-width: 1.5; }
+    .n-block    { fill: #2a0f1c; stroke: #f078aa; stroke-width: 2; }
+    .n-decoy-tri { fill: #9a6700; stroke: #e3b341; stroke-width: 1.5; }
+
+    @keyframes pr { 0%,100%{filter:drop-shadow(0 0 4px #f85149)} 50%{filter:drop-shadow(0 0 14px #f85149)} }
+    .flash { animation: pf 1.4s ease-out forwards; }
+    @keyframes pf { 0%{filter:drop-shadow(0 0 12px #58a6ff)} 100%{filter:none} }
+
+    .nlabel { font-size: 9px; fill: #8b949e; text-anchor: middle; pointer-events: none; }
+    .dlabel { font-size: 8px; fill: #e3b341; text-anchor: middle; pointer-events: none; opacity: 0.8; }
+    .slabel { font-size: 9px; fill: #484f58; text-anchor: middle; pointer-events: none; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* ── Tooltip ── */
+    #tooltip {
+      position: fixed; pointer-events: none; z-index: 200; display: none;
+      background: rgba(13,17,23,0.97); border: 1px solid #30363d;
+      border-radius: 6px; padding: 8px 11px; min-width: 160px;
+    }
+    .tt-name { font-size: 10px; font-weight: 600; color: #e6edf3; margin-bottom: 5px; word-break: break-all; }
+    .tt-row  { display: flex; gap: 6px; margin-bottom: 2px; font-size: 9.5px; align-items: baseline; }
+    .tt-row:last-child { margin-bottom: 0; }
+    .tt-lbl  { color: #484f58; min-width: 42px; flex-shrink: 0; }
+    .tt-val  { color: #c9d1d9; }
+
+    /* ── Event log step divider ── */
+    .ev-divider { border: none; border-top: 1px solid #21262d; margin: 4px 2px; }
+  </style>
+</head>
+
+<body>
+  <div id="header">
+    <div id="dot"></div>
+    <h1>CAGE4 NETWORK DEFENSE DASHBOARD</h1>
+    <div id="mission-badge">
+      <div class="mb-phase" id="phase-name">Phase 0 — Recon</div>
+      <div class="mb-div"></div>
+      <div class="mb-step">Step <b id="snum">—</b> / 99</div>
+    </div>
+  </div>
+
+  <div id="top-bar">
+    <div id="stats-row">
+      <div class="stat-box"><div class="sv sv-r"    id="s-comp">0</div><div class="sl">Compromised</div></div>
+      <div class="stat-box"><div class="sv sv-g"    id="s-clean">16</div><div class="sl">Clean</div></div>
+      <div class="stat-box"><div class="sv sv-o"    id="s-decoy">0</div><div class="sl">Decoys</div></div>
+      <div class="stat-box"><div class="sv sv-zone" id="s-zones">0</div><div class="sl">Zones Blocked</div></div>
+      <div class="stat-box"><div class="sv sv-blk"  id="s-blocked">0</div><div class="sl">Hosts Blocked</div></div>
+      <div class="stat-box"><div class="sv sv-rest" id="s-restored">0</div><div class="sl">Restored</div></div>
+      <div class="stat-box"><div class="sv sv-anal" id="s-analysed">0</div><div class="sl">Analysed</div></div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="graph-panel">
+      <svg id="svg"></svg>
+      <div id="fsm-overlay">
+        <div class="gl-title">Red Agent FSM</div>
+        <div class="fov-row"><div class="fov-chip fc-K">K</div><span class="fov-cnt" id="fK">16</span></div>
+        <div class="fov-row"><div class="fov-chip fc-KD">KD</div><span class="fov-cnt" id="fKD">0</span></div>
+        <div class="fov-row"><div class="fov-chip fc-S">S</div><span class="fov-cnt" id="fS">0</span></div>
+        <div class="fov-row"><div class="fov-chip fc-SD">SD</div><span class="fov-cnt" id="fSD">0</span></div>
+        <div class="fov-row"><div class="fov-chip fc-U">U</div><span class="fov-cnt" id="fU">0</span></div>
+        <div class="fov-row"><div class="fov-chip fc-UD">UD</div><span class="fov-cnt" id="fUD">0</span></div>
+        <div class="fov-row"><div class="fov-chip fc-R">R</div><span class="fov-cnt" id="fR">0</span></div>
+        <div class="fov-row"><div class="fov-chip fc-RD">RD</div><span class="fov-cnt" id="fRD">0</span></div>
+        <div class="fov-row"><div class="fov-chip fc-F">F</div><span class="fov-cnt" id="fF">0</span></div>
+      </div>
+      <div id="graph-legend">
+        <div class="gl-title">Legend</div>
+        <div class="gl-row"><div class="gl-dot" style="background:#1f6feb;border-radius:2px"></div>Server (clean)</div>
+        <div class="gl-row"><div class="gl-dot" style="background:#1f6feb;border-radius:50%"></div>User (clean)</div>
+        <div class="gl-row"><div class="gl-dot" style="background:#da3633;border-radius:50%"></div>Compromised</div>
+        <div class="gl-row"><div class="gl-dot" style="background:#1a7f37;border-radius:2px"></div>Restored</div>
+        <div class="gl-row"><div class="gl-dot" style="background:#6e40c9;border-radius:2px"></div>Analysed</div>
+        <div class="gl-row"><div class="gl-dot" style="background:#2a0f1c;border:1px solid #f078aa;border-radius:2px"></div>Host Blocked</div>
+        <div class="gl-row">
+          <svg width="10" height="10" viewBox="-10 -10 20 18" style="flex-shrink:0;overflow:visible" display="block">
+            <polygon points="0,-8 7,6 -7,6" fill="#9a6700" stroke="#e3b341" stroke-width="1.5"/>
+          </svg>
+          &nbsp;&nbsp;Decoy node
+        </div>
+        <div class="gl-row">
+          <svg width="10" height="10" viewBox="-12 -12 24 24" style="flex-shrink:0;overflow:visible" display="block">
+            <polygon points="0,-9 8,0 0,9 -8,0" fill="#1c0900" stroke="#f0883e" stroke-width="2" stroke-dasharray="3,2"/>
+          </svg>
+          &nbsp;&nbsp;Zone blocked (router)
+        </div>
+        <div class="gl-row">
+          <svg width="22" height="4" style="flex-shrink:0" viewBox="0 0 22 4">
+            <line x1="0" y1="2" x2="22" y2="2" stroke="#f0883e" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>
+          </svg>
+          Blocked zone link
+        </div>
+        <div class="gl-row"><div class="gl-dot" style="background:#484f58;transform:rotate(45deg);margin:0 0 0 1px"></div>Router</div>
+      </div>
+    </div>
+    <div id="evlog-panel">
+      <div id="evlog-resize"></div>
+      <div class="el-head">
+        <button id="evlog-collapse-btn" title="Collapse / expand" onclick="toggleEvlog()">&#9664;</button>
+        <span class="el-head-title">Event Log</span>
+      </div>
+      <div id="evlog-scroll"><div id="evc"></div></div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <button class="ctrl-btn" id="btn-restart" onclick="restart()">&#8635; Restart</button>
+    <button class="ctrl-btn active" id="btn-play" onclick="togglePlay()">&#9646;&#9646; Pause</button>
+    <div id="progress-wrap">
+      <div id="progress-bar"><div id="progress-fill"></div></div>
+      <div id="progress-label">Step 0 / 99</div>
+    </div>
+    <div id="speed-wrap">
+      Speed:
+      <select id="speed-input">
+        <option value="2000">0.5×</option>
+        <option value="1200">1×</option>
+        <option value="600" selected>2×</option>
+        <option value="300">4×</option>
+        <option value="120">8×</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="tooltip">
+    <div class="tt-name" id="tt-name"></div>
+    <div class="tt-row"><span class="tt-lbl">Subnet</span><span class="tt-val" id="tt-subnet"></span></div>
+    <div class="tt-row"><span class="tt-lbl">Kind</span><span class="tt-val" id="tt-kind"></span></div>
+    <div class="tt-row"><span class="tt-lbl">Status</span><span class="tt-val" id="tt-status"></span></div>
+    <div class="tt-row" id="tt-fsm-row"><span class="tt-lbl">FSM</span><span class="tt-val" id="tt-fsm"></span></div>
+  </div>
+
+  <script>
+    // ── Topology (matches cage4-topology.yaml exactly) ──────────────────────────
+    const NODES = [
+      { id: "internet-router",             kind: "internet", subnet: "inet", label: "Internet" },
+      { id: "restricted-zone-a-router",    kind: "router",   subnet: "rzA",  label: "RZA" },
+      { id: "operational-zone-a-router",   kind: "router",   subnet: "ozA",  label: "OZA" },
+      { id: "restricted-zone-b-router",    kind: "router",   subnet: "rzB",  label: "RZB" },
+      { id: "operational-zone-b-router",   kind: "router",   subnet: "ozB",  label: "OZB" },
+      { id: "contractor-network-router",   kind: "router",   subnet: "ctr",  label: "CTR" },
+      { id: "public-access-zone-router",   kind: "router",   subnet: "pub",  label: "PAZ" },
+      { id: "admin-network-router",        kind: "router",   subnet: "adm",  label: "ADM" },
+      { id: "office-network-router",       kind: "router",   subnet: "off",  label: "OFF" },
+      { id: "restricted-zone-a-server-0",  kind: "server",   subnet: "rzA",  label: "RZA-S0" },
+      { id: "restricted-zone-a-server-1",  kind: "server",   subnet: "rzA",  label: "RZA-S1" },
+      { id: "operational-zone-a-server-0", kind: "server",   subnet: "ozA",  label: "OZA-S0" },
+      { id: "restricted-zone-b-server-0",  kind: "server",   subnet: "rzB",  label: "RZB-S0" },
+      { id: "operational-zone-b-server-0", kind: "server",   subnet: "ozB",  label: "OZB-S0" },
+      { id: "contractor-network-server-0", kind: "server",   subnet: "ctr",  label: "CTR-S0" },
+      { id: "restricted-zone-a-user-0",    kind: "user",     subnet: "rzA",  label: "RZA-U0" },
+      { id: "operational-zone-a-user-0",   kind: "user",     subnet: "ozA",  label: "OZA-U0" },
+      { id: "restricted-zone-b-user-0",    kind: "user",     subnet: "rzB",  label: "RZB-U0" },
+      { id: "operational-zone-b-user-0",   kind: "user",     subnet: "ozB",  label: "OZB-U0" },
+      { id: "contractor-network-user-0",   kind: "user",     subnet: "ctr",  label: "CTR-U0" },
+      { id: "contractor-network-user-1",   kind: "user",     subnet: "ctr",  label: "CTR-U1" },
+      { id: "public-access-zone-user-0",   kind: "user",     subnet: "pub",  label: "PAZ-U0" },
+      { id: "admin-network-user-0",        kind: "user",     subnet: "adm",  label: "ADM-U0" },
+      { id: "office-network-user-0",       kind: "user",     subnet: "off",  label: "OFF-U0" },
+      { id: "office-network-user-1",       kind: "user",     subnet: "off",  label: "OFF-U1" },
+    ];
+
+    const LINKS = [
+      { s: "internet-router",           t: "restricted-zone-a-router",   rr: true },
+      { s: "internet-router",           t: "restricted-zone-b-router",   rr: true },
+      { s: "internet-router",           t: "contractor-network-router",  rr: true },
+      { s: "internet-router",           t: "public-access-zone-router",  rr: true },
+      { s: "restricted-zone-a-router",  t: "operational-zone-a-router",  rr: true },
+      { s: "restricted-zone-b-router",  t: "operational-zone-b-router",  rr: true },
+      { s: "public-access-zone-router", t: "admin-network-router",       rr: true },
+      { s: "public-access-zone-router", t: "office-network-router",      rr: true },
+      { s: "restricted-zone-a-router",  t: "restricted-zone-a-server-0" },
+      { s: "restricted-zone-a-router",  t: "restricted-zone-a-server-1" },
+      { s: "restricted-zone-a-router",  t: "restricted-zone-a-user-0" },
+      { s: "operational-zone-a-router", t: "operational-zone-a-server-0" },
+      { s: "operational-zone-a-router", t: "operational-zone-a-user-0" },
+      { s: "restricted-zone-b-router",  t: "restricted-zone-b-server-0" },
+      { s: "restricted-zone-b-router",  t: "restricted-zone-b-user-0" },
+      { s: "operational-zone-b-router", t: "operational-zone-b-server-0" },
+      { s: "operational-zone-b-router", t: "operational-zone-b-user-0" },
+      { s: "contractor-network-router", t: "contractor-network-server-0" },
+      { s: "contractor-network-router", t: "contractor-network-user-0" },
+      { s: "contractor-network-router", t: "contractor-network-user-1" },
+      { s: "public-access-zone-router", t: "public-access-zone-user-0" },
+      { s: "admin-network-router",      t: "admin-network-user-0" },
+      { s: "office-network-router",     t: "office-network-user-0" },
+      { s: "office-network-router",     t: "office-network-user-1" },
+    ];
+
+    const SUB_POS = {
+      inet: [0.50, 0.09],
+      rzA: [0.17, 0.33], ozA: [0.17, 0.67],
+      rzB: [0.38, 0.33], ozB: [0.38, 0.67],
+      ctr: [0.62, 0.33],
+      pub: [0.82, 0.33], adm: [0.74, 0.67], off: [0.92, 0.67],
+    };
+    const SUB_NAMES = {
+      inet: "Internet", rzA: "Restricted A", ozA: "Operational A",
+      rzB: "Restricted B", ozB: "Operational B", ctr: "Contractor",
+      pub: "Public Access", adm: "Admin", off: "Office",
+    };
+    const SUB_COLOR = {
+      inet: "#58a6ff",
+      rzA: "#3fb950", ozA: "#3fb950",
+      rzB: "#a371f7", ozB: "#a371f7",
+      ctr: "#f85149",
+      pub: "#e3b341", adm: "#e3b341", off: "#e3b341",
+    };
+
+    // ── Helpers ──────────────────────────────────────────────────────────────────
+    const HOSTS   = NODES.filter(n => n.kind === "server" || n.kind === "user").map(n => n.id);
+    const SERVERS = NODES.filter(n => n.kind === "server").map(n => n.id);
+
+    // Blockable subnet routers — sorted alphabetically, matching action_executor.py SUBNET_ROUTERS_SORTED
+    const BLOCKABLE_ROUTERS = [
+      "admin-network-router",
+      "contractor-network-router",
+      "office-network-router",
+      "operational-zone-a-router",
+      "operational-zone-b-router",
+      "public-access-zone-router",
+      "restricted-zone-a-router",
+      "restricted-zone-b-router",
+    ];
+    // router ID → subnet key (for finding which hosts belong to the subnet)
+    const ROUTER_SUBNET = {
+      "admin-network-router":        "adm",
+      "contractor-network-router":   "ctr",
+      "office-network-router":       "off",
+      "operational-zone-a-router":   "ozA",
+      "operational-zone-b-router":   "ozB",
+      "public-access-zone-router":   "pub",
+      "restricted-zone-a-router":    "rzA",
+      "restricted-zone-b-router":    "rzB",
+    };
+
+    function rnd()     { return Math.random(); }
+    function pick(arr) { return arr[Math.floor(rnd() * arr.length)]; }
+    function shortLabel(id) { const n = NODES.find(n => n.id === id); return n ? n.label : id; }
+
+    // ── Simulation ───────────────────────────────────────────────────────────────
+    function generateEpisode() {
+      const MAX = 99;
+      const fsm       = {};   // host → K|KD|S|SD|U|UD|R|RD|F
+      const vis       = {};   // host → clean|compromised|restored|analysed|blocked
+      const decoyed   = new Set();
+      const restoreAt = {};   // host → step (fade to clean after 4 steps)
+      // Subnet router block state
+      const blockedRouters = new Set();  // currently blocked router IDs
+      const blockedAt      = {};         // routerId → step when blocked (auto-allow after 12 steps)
+      const allEvents = [];
+      const steps     = [];
+
+      HOSTS.forEach(h => { fsm[h] = "K"; vis[h] = "clean"; });
+
+      for (let step = 1; step <= MAX; step++) {
+        const phase = step < 34 ? 0 : step < 67 ? 1 : 2;
+
+        // Auto-allow blocked routers after 12 steps
+        BLOCKABLE_ROUTERS.forEach(r => {
+          if (blockedAt[r] && step - blockedAt[r] >= 12 && blockedRouters.has(r)) {
+            blockedRouters.delete(r);
+            delete blockedAt[r];
+            allEvents.push({ step, actor: "blue", type: "AllowTrafficZone", target: shortLabel(r) });
+          }
+        });
+
+        // Fade restored/blocked/analysed nodes back to clean after 4 steps
+        HOSTS.forEach(h => {
+          if (restoreAt[h] && step - restoreAt[h] >= 4) {
+            if (["restored", "blocked", "analysed"].includes(vis[h])) vis[h] = "clean";
+            delete restoreAt[h];
+          }
+        });
+
+        // ── Red agent ──
+        const availSrv = SERVERS.filter(h => fsm[h] !== "F");
+        const availAll = HOSTS.filter(h => fsm[h] !== "F");
+        const redPool  = (availSrv.length > 0 && rnd() < 0.75) ? availSrv : (availAll.length > 0 ? availAll : HOSTS);
+        const redTgt   = pick(redPool);
+        const st       = fsm[redTgt];
+        let redAct;
+
+        if (st === "K") {
+          if (rnd() < 0.78) { redAct = "AggressiveServiceDiscovery"; fsm[redTgt] = "S"; }
+          else               { redAct = "DiscoverRemoteSystems"; }
+        } else if (st === "KD") {
+          redAct = "Withdraw"; fsm[redTgt] = "F";
+        } else if (st === "S") {
+          if (decoyed.has(redTgt) && rnd() < 0.40) {
+            redAct = "DiscoverDeception"; fsm[redTgt] = "SD";
+          } else if (rnd() < 0.68) {
+            redAct = "ExploitRemoteService"; fsm[redTgt] = "U"; vis[redTgt] = "compromised";
+          } else {
+            redAct = "StealthServiceDiscovery";
+          }
+        } else if (st === "SD") {
+          redAct = "Withdraw"; fsm[redTgt] = "F";
+        } else if (st === "U") {
+          if (decoyed.has(redTgt) && rnd() < 0.25) {
+            redAct = "DiscoverDeception"; fsm[redTgt] = "UD";
+          } else if (rnd() < 0.72) {
+            redAct = "PrivilegeEscalate"; fsm[redTgt] = "R";
+          } else {
+            redAct = "Impact";
+          }
+        } else if (st === "UD") {
+          redAct = "Withdraw"; fsm[redTgt] = "F";
+        } else if (st === "R") {
+          redAct = rnd() < 0.60 ? "Impact" : "DegradeServices";
+        } else if (st === "RD") {
+          redAct = "Withdraw"; fsm[redTgt] = "F";
+        } else {
+          redAct = "DiscoverRemoteSystems";
+        }
+
+        allEvents.push({ step, actor: "red", type: redAct, target: shortLabel(redTgt) });
+
+        // ── Blue agent ──
+        const rootH  = HOSTS.filter(h => fsm[h] === "R" || fsm[h] === "RD");
+        const userH  = HOSTS.filter(h => fsm[h] === "U" || fsm[h] === "UD");
+        const scanH  = HOSTS.filter(h => fsm[h] === "S" || fsm[h] === "SD");
+        const cleanH = HOSTS.filter(h => (fsm[h] === "K" || fsm[h] === "F") && !decoyed.has(h));
+
+        // Routers whose subnets contain escalated (U/R) hosts — candidates for BlockTrafficZone
+        const urgentRouters = BLOCKABLE_ROUTERS.filter(r => {
+          if (blockedRouters.has(r)) return false;
+          const sub = ROUTER_SUBNET[r];
+          return HOSTS.some(h => {
+            const node = NODES.find(n => n.id === h);
+            return node && node.subnet === sub && (fsm[h] === "U" || fsm[h] === "R" || fsm[h] === "UD" || fsm[h] === "RD");
+          });
+        });
+
+        let blueAct, blueTgt, blueTgtId;
+
+        if (phase === 0) {
+          // Phase 0: Analyse + DeployDecoy
+          if (scanH.length > 0 && rnd() < 0.55) {
+            blueTgtId = pick(scanH); blueAct = "Analyse";
+            vis[blueTgtId] = "analysed"; restoreAt[blueTgtId] = step;
+          } else if (cleanH.length > 0 && rnd() < 0.52) {
+            blueTgtId = pick(cleanH); blueAct = "DeployDecoy"; decoyed.add(blueTgtId);
+          } else if (userH.length > 0) {
+            blueTgtId = pick(userH); blueAct = "Analyse";
+            vis[blueTgtId] = "analysed"; restoreAt[blueTgtId] = step;
+          } else {
+            blueTgtId = pick(HOSTS); blueAct = "Monitor";
+          }
+          blueTgt = shortLabel(blueTgtId);
+
+        } else if (phase === 1) {
+          // Phase 1: Restore + BlockTrafficZone on hot subnets
+          if (rootH.length > 0 && rnd() < 0.75) {
+            blueTgtId = pick(rootH); blueAct = "Restore";
+            fsm[blueTgtId] = "K"; vis[blueTgtId] = "restored"; restoreAt[blueTgtId] = step;
+            blueTgt = shortLabel(blueTgtId);
+          } else if (urgentRouters.length > 0 && rnd() < 0.55) {
+            // BlockTrafficZone — target is a router
+            blueTgtId = pick(urgentRouters); blueAct = "BlockTrafficZone";
+            blockedRouters.add(blueTgtId); blockedAt[blueTgtId] = step;
+            blueTgt = shortLabel(blueTgtId);
+          } else if (userH.length > 0 && rnd() < 0.72) {
+            blueTgtId = pick(userH); blueAct = "Block";
+            vis[blueTgtId] = "blocked"; fsm[blueTgtId] = "F"; restoreAt[blueTgtId] = step;
+            blueTgt = shortLabel(blueTgtId);
+          } else if (scanH.length > 0 && rnd() < 0.60) {
+            blueTgtId = pick(scanH); blueAct = "Block";
+            vis[blueTgtId] = "blocked"; fsm[blueTgtId] = "F"; restoreAt[blueTgtId] = step;
+            blueTgt = shortLabel(blueTgtId);
+          } else if (cleanH.length > 0 && rnd() < 0.40) {
+            blueTgtId = pick(cleanH); blueAct = "DeployDecoy"; decoyed.add(blueTgtId);
+            blueTgt = shortLabel(blueTgtId);
+          } else if (blockedRouters.size > 0 && rnd() < 0.20) {
+            // Manually allow a blocked zone back
+            blueTgtId = pick(Array.from(blockedRouters)); blueAct = "AllowTrafficZone";
+            blockedRouters.delete(blueTgtId); delete blockedAt[blueTgtId];
+            blueTgt = shortLabel(blueTgtId);
+          } else {
+            blueTgtId = pick(HOSTS); blueAct = "Monitor"; blueTgt = shortLabel(blueTgtId);
+          }
+
+        } else {
+          // Phase 2: Aggressive restore + subnet blocking
+          if (rootH.length > 0) {
+            blueTgtId = pick(rootH); blueAct = "Restore";
+            fsm[blueTgtId] = "K"; vis[blueTgtId] = "restored"; restoreAt[blueTgtId] = step;
+            blueTgt = shortLabel(blueTgtId);
+          } else if (urgentRouters.length > 0 && rnd() < 0.65) {
+            blueTgtId = pick(urgentRouters); blueAct = "BlockTrafficZone";
+            blockedRouters.add(blueTgtId); blockedAt[blueTgtId] = step;
+            blueTgt = shortLabel(blueTgtId);
+          } else if (userH.length > 0 && rnd() < 0.80) {
+            blueTgtId = pick(userH); blueAct = "Restore";
+            fsm[blueTgtId] = "K"; vis[blueTgtId] = "restored"; restoreAt[blueTgtId] = step;
+            blueTgt = shortLabel(blueTgtId);
+          } else if (scanH.length > 0 && rnd() < 0.65) {
+            blueTgtId = pick(scanH); blueAct = "Block";
+            vis[blueTgtId] = "blocked"; fsm[blueTgtId] = "F"; restoreAt[blueTgtId] = step;
+            blueTgt = shortLabel(blueTgtId);
+          } else if (blockedRouters.size > 0 && rnd() < 0.25) {
+            blueTgtId = pick(Array.from(blockedRouters)); blueAct = "AllowTrafficZone";
+            blockedRouters.delete(blueTgtId); delete blockedAt[blueTgtId];
+            blueTgt = shortLabel(blueTgtId);
+          } else {
+            blueTgtId = pick(HOSTS); blueAct = "Analyse";
+            vis[blueTgtId] = "analysed"; restoreAt[blueTgtId] = step;
+            blueTgt = shortLabel(blueTgtId);
+          }
+        }
+
+        if (!blueTgtId) { blueTgtId = pick(HOSTS); blueAct = "Monitor"; blueTgt = shortLabel(blueTgtId); }
+
+        allEvents.push({ step, actor: "blue", type: blueAct, target: blueTgt });
+
+        // FSM counts
+        const fc = { K: 0, KD: 0, S: 0, SD: 0, U: 0, UD: 0, R: 0, RD: 0, F: 0 };
+        HOSTS.forEach(h => { fc[fsm[h]] = (fc[fsm[h]] || 0) + 1; });
+
+        const nComp     = HOSTS.filter(h => vis[h] === "compromised").length;
+        const nRestored = HOSTS.filter(h => vis[h] === "restored").length;
+        const nBlocked  = HOSTS.filter(h => vis[h] === "blocked").length;
+        const nAnalysed = HOSTS.filter(h => vis[h] === "analysed").length;
+        const nClean    = HOSTS.filter(h => vis[h] === "clean").length;
+        const nDecoy    = decoyed.size;
+        const nZones    = blockedRouters.size;
+
+        steps.push({
+          step, phase,
+          nodeStatuses:   Object.fromEntries(HOSTS.map(h => [h, vis[h]])),
+          fsmCounts:      { ...fc },
+          blockedRouters: Array.from(blockedRouters),
+          nComp, nClean, nDecoy, nZones, nRestored, nBlocked, nAnalysed,
+          activeDecoys:   Array.from(decoyed),
+          events:         allEvents.slice(),
+          fsmStates:      Object.fromEntries(HOSTS.map(h => [h, fsm[h]])),
+          highlighted:    { [redTgt]: true, [blueTgtId]: true },
+        });
+      }
+      return steps;
+    }
+
+    // ── D3 globals ────────────────────────────────────────────────────────────────
+    let W, H, svg, g, sim, nodeGs, linkSel, labelSel;
+    const byId        = {};
+    const flashTimers = {};
+    const decoyElems  = {};
+    let decoyLinkLayer, decoyNodeLayer;
+    let activeDecoyHosts = new Set();
+
+    function nodeClass(d) {
+      if (d.kind === "internet") return "n-internet";
+      if (d.kind === "router")   return d.blocked ? "n-router-blocked" : "n-router";
+      return { compromised:"n-comp", restored:"n-rest", analysed:"n-anal", blocked:"n-block" }[d.status]
+        || (d.kind === "server" ? "n-server" : "n-user");
+    }
+
+    function linkClass(d, blockedSet) {
+      if (blockedSet.has(d.source.id) || blockedSet.has(d.target.id)) return "link link-zone-blocked";
+      return d.rr ? "link rr" : "link";
+    }
+
+    function initGraph() {
+      const panel = document.getElementById("graph-panel");
+      W = panel.clientWidth; H = panel.clientHeight;
+      svg = d3.select("#svg").attr("viewBox", `0 0 ${W} ${H}`);
+      g = svg.append("g");
+      svg.call(d3.zoom().scaleExtent([0.2, 5]).on("zoom", e => g.attr("transform", e.transform)));
+
+      NODES.forEach(n => {
+        const [cx, cy] = SUB_POS[n.subnet] || [0.5, 0.5];
+        byId[n.id] = { ...n, x: cx * W + (rnd() - 0.5) * 70, y: cy * H + (rnd() - 0.5) * 70, status: "clean", blocked: false };
+      });
+      const nodes = Object.values(byId);
+      const links = LINKS.map(l => ({ ...l, source: byId[l.s], target: byId[l.t] }));
+
+      const hullG    = g.append("g");
+      const linkG    = g.append("g");
+      const nodeG    = g.append("g");
+      const labelG   = g.append("g");
+      decoyLinkLayer = g.append("g");
+      decoyNodeLayer = g.append("g");
+
+      labelSel = labelG.selectAll("text.slabel")
+        .data(Object.entries(SUB_POS))
+        .join("text").attr("class", "slabel")
+        .attr("x", ([, [cx]]) => cx * W)
+        .attr("y", ([, [, cy]]) => cy * H - 36)
+        .text(([s]) => SUB_NAMES[s] || s);
+
+      linkSel = linkG.selectAll("line").data(links).join("line")
+        .attr("class", d => d.rr ? "link rr" : "link");
+
+      nodeGs = nodeG.selectAll("g.node").data(nodes, d => d.id).join("g")
+        .attr("class", "node")
+        .call(d3.drag()
+          .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+          .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; })
+          .on("end",   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
+
+      nodeGs.filter(d => d.kind === "internet" || d.kind === "router")
+        .append("polygon")
+        .attr("class", d => d.kind === "internet" ? "n-internet" : "n-router")
+        .attr("points", d => d.kind === "internet" ? "0,-16 14,0 0,16 -14,0" : "0,-11 9,0 0,11 -9,0");
+
+      nodeGs.filter(d => d.kind === "server")
+        .append("rect").attr("class", "n-server")
+        .attr("x", -12).attr("y", -8).attr("width", 24).attr("height", 16).attr("rx", 3);
+
+      nodeGs.filter(d => d.kind === "user")
+        .append("circle").attr("class", "n-user").attr("r", 9);
+
+      nodeGs.append("text").attr("class", "nlabel")
+        .attr("dy", d => d.kind === "server" ? 22 : 21).text(d => d.label);
+
+      // ── Tooltip ──
+      const tip = document.getElementById("tooltip");
+      const FSM_LABEL = { K:"Known", KD:"Known+Decoy", S:"Scanned", SD:"Scanned+Decoy", U:"User access", UD:"User+Decoy", R:"Root access", RD:"Root+Decoy", F:"Withdrawn" };
+      nodeGs
+        .on("mouseenter", (e, d) => {
+          document.getElementById("tt-name").textContent = d.id;
+          document.getElementById("tt-subnet").textContent = SUB_NAMES[d.subnet] || d.subnet;
+          document.getElementById("tt-kind").textContent = d.kind;
+          const statusText = d.kind === "internet" ? "online"
+            : d.kind === "router" ? (d.blocked ? "zone blocked" : "online")
+            : (d.status || "clean");
+          document.getElementById("tt-status").textContent = statusText;
+          const fsmRow = document.getElementById("tt-fsm-row");
+          if (d.kind === "server" || d.kind === "user") {
+            const fs = d.fsmState || "K";
+            document.getElementById("tt-fsm").textContent = `${fs} — ${FSM_LABEL[fs] || fs}`;
+            fsmRow.style.display = "flex";
+          } else {
+            fsmRow.style.display = "none";
+          }
+          tip.style.display = "block";
+        })
+        .on("mousemove", e => {
+          const tx = e.clientX + 16, ty = e.clientY - 12;
+          tip.style.left = Math.min(tx, window.innerWidth  - 180) + "px";
+          tip.style.top  = Math.max(ty, 8) + "px";
+        })
+        .on("mouseleave", () => { tip.style.display = "none"; });
+
+      // Pre-create one decoy element per host
+      HOSTS.forEach(hostId => {
+        const line = decoyLinkLayer.append("line").attr("class", "decoy-link").style("display", "none");
+        const dg = decoyNodeLayer.append("g").style("display", "none");
+        dg.append("polygon").attr("class", "n-decoy-tri").attr("points", "0,-9 8,6 -8,6");
+        dg.append("text").attr("class", "dlabel").attr("dy", 18).text("DECOY");
+        decoyElems[hostId] = { g: dg, line };
+      });
+
+      // Force simulation — identical parameters to reference
+      sim = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).id(d => d.id).distance(d => d.rr ? 95 : 48).strength(0.85))
+        .force("charge", d3.forceManyBody().strength(-130))
+        .force("subnet", () => {
+          nodes.forEach(n => {
+            const [cx, cy] = SUB_POS[n.subnet] || [0.5, 0.5];
+            n.vx += (cx * W - n.x) * 0.05; n.vy += (cy * H - n.y) * 0.05;
+          });
+        })
+        .force("collide", d3.forceCollide(18))
+        .alphaDecay(0.025)
+        .on("tick", tick);
+
+      window.addEventListener("resize", () => {
+        const p = document.getElementById("graph-panel");
+        W = p.clientWidth; H = p.clientHeight;
+        svg.attr("viewBox", `0 0 ${W} ${H}`);
+        updateLabelPositions();
+        sim.alpha(0.3).restart();
+      });
+    }
+
+    function updateLabelPositions() {
+      if (!labelSel) return;
+      labelSel
+        .attr("x", ([, [cx]]) => cx * W)
+        .attr("y", ([, [, cy]]) => cy * H - 36);
+    }
+
+    function tick() {
+      linkSel
+        .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+      nodeGs.attr("transform", d => `translate(${d.x},${d.y})`);
+
+      // Decoy star positions — direction away from subnet centre
+      activeDecoyHosts.forEach(hostId => {
+        const parent = byId[hostId];
+        if (!parent || !decoyElems[hostId]) return;
+        const [cx, cy] = SUB_POS[parent.subnet] || [0.5, 0.5];
+        let ddx = parent.x - cx * W, ddy = parent.y - cy * H;
+        const len = Math.hypot(ddx, ddy);
+        if (len < 5) { ddx = 0; ddy = -1; } else { ddx /= len; ddy /= len; }
+        const sx = parent.x + ddx * 52, sy = parent.y + ddy * 52;
+        decoyElems[hostId].g.attr("transform", `translate(${sx},${sy})`);
+        decoyElems[hostId].line.attr("x1", parent.x).attr("y1", parent.y).attr("x2", sx).attr("y2", sy);
+      });
+
+      // Hulls
+      const groups = {};
+      Object.values(byId).forEach(n => { (groups[n.subnet] ||= []).push([n.x, n.y]); });
+      const hullData = Object.entries(groups)
+        .filter(([, pts]) => pts.length >= 3)
+        .map(([s, pts]) => ({ s, hull: d3.polygonHull(pts), color: SUB_COLOR[s] || "#8b949e" }));
+      g.select("g").selectAll("path").data(hullData, d => d.s).join("path")
+        .attr("class", "hull")
+        .attr("fill", d => d.color).attr("stroke", d => d.color)
+        .attr("d", d => d.hull ? "M" + d.hull.join("L") + "Z" : "");
+    }
+
+    // ── Apply simulation state ────────────────────────────────────────────────────
+    function applyStep(state) {
+      const blockedRtrSet = new Set(state.blockedRouters || []);
+
+      // Update all nodes (hosts + routers)
+      const fsmStates = state.fsmStates || {};
+      nodeGs.each(function(d) {
+        if (d.kind !== "router" && d.kind !== "internet") {
+          d.status   = state.nodeStatuses[d.id] || "clean";
+          d.fsmState = fsmStates[d.id] || "K";
+        }
+        if (d.kind === "router") d.blocked = blockedRtrSet.has(d.id);
+
+        d3.select(this).select("polygon,rect,circle").attr("class", nodeClass(d));
+        d3.select(this).classed("flash", false);
+        if (state.highlighted && state.highlighted[d.id]) {
+          void this.offsetWidth;
+          d3.select(this).classed("flash", true);
+          clearTimeout(flashTimers[d.id]);
+          flashTimers[d.id] = setTimeout(() => d3.select(this).classed("flash", false), 1400);
+        }
+      });
+
+      // Update link styles based on blocked routers
+      linkSel.attr("class", d => linkClass(d, blockedRtrSet));
+
+      // Show/hide decoys
+      const newDecoys = new Set(state.activeDecoys || []);
+      HOSTS.forEach(hostId => {
+        const elem = decoyElems[hostId];
+        if (!elem) return;
+        const visible    = newDecoys.has(hostId);
+        const wasVisible = activeDecoyHosts.has(hostId);
+        if (visible !== wasVisible) {
+          elem.g.style("display", visible ? null : "none");
+          elem.line.style("display", visible ? null : "none");
+          if (visible) {
+            const parent = byId[hostId];
+            if (parent) {
+              const [cx, cy] = SUB_POS[parent.subnet] || [0.5, 0.5];
+              let ddx = parent.x - cx * W, ddy = parent.y - cy * H;
+              const len = Math.hypot(ddx, ddy);
+              if (len < 5) { ddx = 0; ddy = -1; } else { ddx /= len; ddy /= len; }
+              const sx = parent.x + ddx * 52, sy = parent.y + ddy * 52;
+              elem.g.attr("transform", `translate(${sx},${sy})`);
+              elem.line.attr("x1", parent.x).attr("y1", parent.y).attr("x2", sx).attr("y2", sy);
+            }
+          }
+        }
+      });
+      activeDecoyHosts = newDecoys;
+
+      // Stats
+      document.getElementById("s-comp").textContent     = state.nComp;
+      document.getElementById("s-clean").textContent    = state.nClean;
+      document.getElementById("s-decoy").textContent    = state.nDecoy;
+      document.getElementById("s-zones").textContent    = state.nZones;
+      document.getElementById("s-blocked").textContent  = state.nBlocked;
+      document.getElementById("s-restored").textContent = state.nRestored;
+      document.getElementById("s-analysed").textContent = state.nAnalysed;
+      document.getElementById("snum").textContent       = state.step;
+
+      // Phase badge
+      const phaseNames  = ["Phase 0 — Recon", "Phase 1 — Escalation", "Phase 2 — Impact"];
+      const phaseColors = ["#58a6ff", "#e3b341", "#f85149"];
+      const pn = document.getElementById("phase-name");
+      pn.style.color  = phaseColors[state.phase];
+      pn.textContent  = phaseNames[state.phase];
+
+      // FSM chips
+      const fc = state.fsmCounts;
+      ["K", "KD", "S", "SD", "U", "UD", "R", "RD", "F"].forEach(k => {
+        document.getElementById("f" + k).textContent = fc[k] || 0;
+      });
+
+      // Status dot
+      const dot = document.getElementById("dot");
+      dot.style.background = state.nComp > 0 ? "#f85149" : "#3fb950";
+      dot.style.boxShadow  = state.nComp > 0 ? "0 0 6px #f85149" : "0 0 6px #3fb950";
+
+      // Progress
+      document.getElementById("progress-fill").style.width   = (state.step / 99 * 100) + "%";
+      document.getElementById("progress-label").textContent  = `Step ${state.step} / 99`;
+
+      // Event log — with step-group dividers
+      const evs = state.events.slice().reverse().slice(0, 80);
+      let evHtml = "", lastEvStep = null;
+      evs.forEach(ev => {
+        if (lastEvStep !== null && ev.step !== lastEvStep)
+          evHtml += '<hr class="ev-divider">';
+        evHtml += `<div class="ev">
+          <span class="ev-step">${ev.step}</span>
+          <span class="eb ${ev.actor === "red" ? "eb-r" : "eb-b"}">${ev.actor}</span>
+          <span class="ev-text"><b>${ev.type}</b> → ${ev.target}</span>
+        </div>`;
+        lastEvStep = ev.step;
+      });
+      document.getElementById("evc").innerHTML = evHtml;
+    }
+
+    // ── Playback ──────────────────────────────────────────────────────────────────
+    let STEPS = [], cur = 0, playing = true, timer = null;
+    const getSpeed = () => parseInt(document.getElementById("speed-input").value, 10);
+
+    function scheduleNext() {
+      clearTimeout(timer);
+      if (!playing || cur >= STEPS.length) {
+        if (cur >= STEPS.length) {
+          playing = false;
+          document.getElementById("btn-play").textContent = "▶ Play";
+          document.getElementById("btn-play").classList.remove("active");
+        }
+        return;
+      }
+      timer = setTimeout(() => { applyStep(STEPS[cur++]); scheduleNext(); }, getSpeed());
+    }
+
+    function togglePlay() {
+      playing = !playing;
+      const btn = document.getElementById("btn-play");
+      if (playing) { btn.innerHTML = "&#9646;&#9646; Pause"; btn.classList.add("active"); scheduleNext(); }
+      else         { btn.textContent = "▶ Play"; btn.classList.remove("active"); clearTimeout(timer); }
+    }
+
+    function restart() {
+      clearTimeout(timer); cur = 0; playing = true;
+      STEPS = generateEpisode();
+      Object.values(byId).forEach(n => { n.status = "clean"; n.blocked = false; });
+      if (nodeGs) nodeGs.each(function(d) {
+        d3.select(this).select("polygon,rect,circle").attr("class", nodeClass(d));
+      });
+      if (linkSel) linkSel.attr("class", d => d.rr ? "link rr" : "link");
+      HOSTS.forEach(h => {
+        if (decoyElems[h]) { decoyElems[h].g.style("display", "none"); decoyElems[h].line.style("display", "none"); }
+      });
+      activeDecoyHosts = new Set();
+      document.getElementById("btn-play").innerHTML = "&#9646;&#9646; Pause";
+      document.getElementById("btn-play").classList.add("active");
+      document.getElementById("progress-fill").style.width = "0%";
+      document.getElementById("progress-label").textContent = "Step 0 / 99";
+      document.getElementById("evc").innerHTML = "";
+      scheduleNext();
+    }
+
+    document.getElementById("speed-input").addEventListener("change", () => {
+      if (playing) { clearTimeout(timer); scheduleNext(); }
+    });
+
+    // ── Event log collapse / resize ───────────────────────────────────────────────
+    let evlogSavedWidth = 274;
+
+    function toggleEvlog() {
+      const panel = document.getElementById("evlog-panel");
+      const btn   = document.getElementById("evlog-collapse-btn");
+      if (panel.classList.contains("evlog-collapsed")) {
+        panel.classList.remove("evlog-collapsed");
+        panel.style.width = evlogSavedWidth + "px";
+        btn.innerHTML = "&#9664;";
+      } else {
+        evlogSavedWidth = Math.max(80, panel.offsetWidth);
+        panel.classList.add("evlog-collapsed");
+        panel.style.width = "36px";
+        btn.innerHTML = "&#9654;";
+      }
+      // Give the CSS transition time to finish, then nudge the sim
+      setTimeout(() => { if (sim) { const p = document.getElementById("graph-panel"); W = p.clientWidth; H = p.clientHeight; if (svg) svg.attr("viewBox", `0 0 ${W} ${H}`); updateLabelPositions(); sim.alpha(0.3).restart(); } }, 200);
+    }
+
+    (function initEvlogResize() {
+      const handle = document.getElementById("evlog-resize");
+      let isDown = false, startX, startW;
+
+      handle.addEventListener("mousedown", e => {
+        isDown = true;
+        startX = e.clientX;
+        startW = document.getElementById("evlog-panel").offsetWidth;
+        document.getElementById("evlog-panel").classList.add("evlog-no-transition");
+        document.body.style.userSelect = "none";
+        document.body.style.cursor = "col-resize";
+        e.preventDefault();
+      });
+
+      document.addEventListener("mousemove", e => {
+        if (!isDown) return;
+        const evPanel = document.getElementById("evlog-panel");
+        const newW = Math.max(36, Math.min(700, startW + (startX - e.clientX)));
+        evPanel.style.width = newW + "px";
+        const btn = document.getElementById("evlog-collapse-btn");
+        if (newW <= 36) { evPanel.classList.add("evlog-collapsed"); btn.innerHTML = "&#9654;"; }
+        else            { evPanel.classList.remove("evlog-collapsed"); btn.innerHTML = "&#9664;"; }
+        // Keep graph viewBox and labels in sync during drag
+        const p = document.getElementById("graph-panel");
+        W = p.clientWidth; H = p.clientHeight;
+        if (svg) svg.attr("viewBox", `0 0 ${W} ${H}`);
+        updateLabelPositions();
+      });
+
+      document.addEventListener("mouseup", () => {
+        if (!isDown) return;
+        isDown = false;
+        const evPanel = document.getElementById("evlog-panel");
+        evPanel.classList.remove("evlog-no-transition");
+        document.body.style.userSelect = "";
+        document.body.style.cursor = "";
+        if (evPanel.offsetWidth > 36) evlogSavedWidth = evPanel.offsetWidth;
+        // Restart sim so nodes reflow into new space
+        if (sim) sim.alpha(0.3).restart();
+      });
+    })();
+
+    (function loadD3() {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js";
+      s.onload = () => { initGraph(); STEPS = generateEpisode(); scheduleNext(); };
+      s.onerror = () => {
+        document.getElementById("graph-panel").innerHTML =
+          '<p style="color:#f85149;padding:40px;font-family:monospace">Failed to load D3.js — check network connection</p>';
+      };
+      document.head.appendChild(s);
+    })();
+  </script>
+</body>
+</html>

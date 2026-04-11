@@ -60,6 +60,10 @@ profiles/
 ~/ray_results/
 /tmp/
 
+# Bridge runtime artifacts
+bridge/state.json
+bridge/state.json.tmp
+
 # Experiment outputs
 experiment_*/
 ray_results/
