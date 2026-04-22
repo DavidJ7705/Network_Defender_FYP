@@ -195,7 +195,6 @@ class ActionExecutor:
         try:
             container = self.client.containers.get(full_name)
             mgmt_network = self._get_mgmt_network(container)
-            print(f"[DEBUG] mgmt_network = {mgmt_network}")
 
             topology_name = f"decoy_{clean_name}"
             topology = {
