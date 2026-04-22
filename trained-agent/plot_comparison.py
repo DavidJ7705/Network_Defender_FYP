@@ -40,7 +40,8 @@ def load_latest_csv(directory, pattern):
                 counts[action_type] += 1
             else:
                 counts["Monitor"] += 1
-    return counts
+    masked = "_masked" in os.path.basename(latest)
+    return counts, masked
 
 
 def to_pct(counts):
@@ -48,7 +49,7 @@ def to_pct(counts):
     return {k: 100 * v / total for k, v in counts.items()} if total else counts
 
 
-def plot_bar_cards(b_pct, c_pct, out_path):
+def plot_bar_cards(b_pct, c_pct, out_path, masked=False):
     action_colors = {
         "Analyse":     "#4C9BE8",
         "Block":       "#F4845F",
@@ -102,9 +103,10 @@ def plot_bar_cards(b_pct, c_pct, out_path):
         ax.text(XLIM + 2, y_c, f"{c_pct[action]:.0f}%", va="center", ha="left",
                 fontsize=9.5, color=color, alpha=0.55, fontweight="600")
 
+    bridge_label = "Bridge  ·  Live Network  ·  Action Masked" if masked else "Bridge  ·  Live Network  ·  Baseline"
     lx, ly = 0, -GROUP_GAP * 0.52
     pill(lx, ly, 7, BAR_H, "#888", alpha=1.0,  zorder=4)
-    ax.text(lx + 9, ly, "Bridge  ·  Live Network", va="center",
+    ax.text(lx + 9, ly, bridge_label, va="center",
             fontsize=9, color="#2C3A4B", fontweight="600")
     pill(lx + 55, ly, 7, BAR_H, "#888", alpha=0.42, zorder=4)
     ax.text(lx + 64, ly, "CybORG  ·  Simulation", va="center",
@@ -122,9 +124,12 @@ def plot_bar_cards(b_pct, c_pct, out_path):
 if __name__ == "__main__":
     os.makedirs(OUT_DIR, exist_ok=True)
 
-    b_pct = to_pct(load_latest_csv(BRIDGE_RESULTS_DIR, "bridge_eval_*.csv"))
-    c_pct = to_pct(load_latest_csv(CYBORG_RESULTS_DIR, "cyborg_eval_*.csv"))
+    b_counts, masked = load_latest_csv(BRIDGE_RESULTS_DIR, "bridge_eval_*.csv")
+    c_counts, _      = load_latest_csv(CYBORG_RESULTS_DIR, "cyborg_eval_*.csv")
+    b_pct = to_pct(b_counts)
+    c_pct = to_pct(c_counts)
 
-    plot_bar_cards(b_pct, c_pct, os.path.join(OUT_DIR, "plot_bar_cards.png"))
+    suffix = "_masked" if masked else "_baseline"
+    plot_bar_cards(b_pct, c_pct, os.path.join(OUT_DIR, f"plot_bar_cards{suffix}.png"), masked=masked)
 
     print("\nDone. PNGs saved to trained-agent/results/")

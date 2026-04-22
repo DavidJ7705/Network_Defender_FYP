@@ -178,7 +178,7 @@ class ActionExecutor:
             mgmt_network = self._get_mgmt_network(container)
             was_blocked  = mgmt_network and mgmt_network not in connected
             container.restart()
-            container.exec_run("rm -f /tmp/.compromised")
+            container.exec_run("rm -f /tmp/.compromised /root/.compromised")
             if was_blocked and mgmt_network:
                 self.client.networks.get(mgmt_network).connect(container)
                 print(f"[Executor] Reconnected {clean_name} to {mgmt_network}")

@@ -4,14 +4,20 @@
 #   cd ~/Desktop/Network_Defender_FYP/containerlab-networks
 #   sudo containerlab deploy -t cage4-topology.yaml
 #
-# Terminal 2 (run):
+# Terminal 2 (run — baseline):
 #   cd ~/Desktop/Network_Defender_FYP/bridge
 #   rm -rf __pycache__
 #   sudo ~/fyp-venv-linux/bin/python evaluation.py
+#   → bridge_eval_<timestamp>.csv
+#
+# Terminal 2 (run — with action masking):
+#   sudo ~/fyp-venv-linux/bin/python evaluation.py --mask
+#   → bridge_eval_<timestamp>_masked.csv
 #
 # Cleanup (when done):
 #   sudo containerlab destroy -t cage4-topology.yaml
 
+import argparse
 import csv
 import os
 from datetime import datetime
@@ -27,14 +33,15 @@ TOTAL_STEPS = 100
 LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results")
 
 
-def run_evaluation():
+def run_evaluation(mask_edge_actions=False):
     os.makedirs(LOG_DIR, exist_ok=True)
     run_id = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    csv_path = os.path.join(LOG_DIR, f"bridge_eval_{run_id}.csv")
+    suffix = "_masked" if mask_edge_actions else ""
+    csv_path = os.path.join(LOG_DIR, f"bridge_eval_{run_id}{suffix}.csv")
 
     monitor = ContainerlabMonitor()
     builder = ObservationGraphBuilder()
-    adapter = AgentAdapter()
+    adapter = AgentAdapter(mask_edge_actions=mask_edge_actions)
     executor = ActionExecutor()
     detector = IntrusionDetector()
 
@@ -105,4 +112,7 @@ def run_evaluation():
 
 
 if __name__ == "__main__":
-    run_evaluation()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mask", action="store_true", help="Enable edge action masking (actions 64-79)")
+    args = parser.parse_args()
+    run_evaluation(mask_edge_actions=args.mask)
