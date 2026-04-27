@@ -2,7 +2,7 @@
 
 ## Demo Video 🎥
 
-[Watch on YouTube](#) *(link to be added)*
+[Watch on YouTube](https://youtu.be/Ku3DWwe2lRw)
 
 ---
 
